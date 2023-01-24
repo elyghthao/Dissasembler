@@ -1,0 +1,2378 @@
+00001000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.16.01
+Created On: 1/23/2023 10:17:25 PM
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      : Main File
+00000000                             3  *-----------------------------------------------------------
+00001000                             4      ORG $1000
+00001000                             5  MAIN:
+00001000  2E7C 00100000              6      MOVEA.L #$00100000,SP
+00001006  303C 000D                  7      move #13,d0
+0000100A  43F9 000024E0              8      lea welcomeMsg,a1
+00001010  4E4F                       9      trap #15
+00001012                            10  MAINagain
+00001012  303C 000E                 11      move #14,d0
+00001016  43F9 00002522             12      lea enter_start_msg,a1
+0000101C  4E4F                      13      trap #15
+0000101E                            14      
+0000101E  4EB9 00002252             15      jsr readHex
+00001024  2200                      16      move.l d0,d1
+00001026  0281 00000001             17      andi.l #1,d1
+0000102C  6700 0012                 18      beq MAINstratSave
+00001030                            19      ; odd address 
+00001030                            20      ; print error message
+00001030  303C 000D                 21      move #13,d0
+00001034  43F9 0000263A             22      lea start_odd_msg,a1
+0000103A  4E4F                      23      trap #15
+0000103C  4EF8 1012                 24      jmp MAINagain
+00001040                            25  MAINstratSave
+00001040  23C0 0000236E             26      move.l d0,(start_location)
+00001046                            27  MAINendAgin
+00001046  303C 000E                 28      move #14,d0
+0000104A  43F9 0000256B             29      lea enter_end_msg,a1
+00001050  4E4F                      30      trap #15
+00001052                            31      
+00001052  4EB9 00002252             32      jsr readHex
+00001058  2200                      33      move.l d0,d1
+0000105A  0281 00000001             34      andi.l #1,d1
+00001060  6700 0012                 35      beq MAINendSave
+00001064                            36      ; odd address 
+00001064                            37      ; print error message
+00001064  303C 000D                 38      move #13,d0
+00001068  43F9 0000267C             39      lea end_odd_msg,a1
+0000106E  4E4F                      40      trap #15
+00001070  4EF8 1046                 41      jmp MAINendAgin
+00001074                            42  MAINendSave
+00001074  23C0 00002372             43      move.l d0,(end_location)
+0000107A                            44      
+0000107A  B0B9 0000236E             45      cmp.l (start_location),d0
+00001080  6F00 007A                 46      ble MAINerror_1
+00001084                            47      
+00001084  2439 0000236E             48      move.l (start_location),d2
+0000108A  2042                      49      move.l d2,a0
+0000108C                            50  MAINloop
+0000108C  4281                      51      clr.l d1 ; we use d1 as counter of inner loop (i=0)
+0000108E                            52  MAINInnerLoop
+0000108E  0C81 0000000A             53      cmpi.l #10,d1
+00001094  6C00 0026                 54      bge MAINInnerLoopDone
+00001098                            55      ; here ( i < 10 )
+00001098  2039 00002372             56      move.l (end_location),d0
+0000109E  2240                      57      move.l d0,a1
+000010A0  4EB9 0000111A             58      jsr disassembler
+000010A6  B1FC 00000000             59      cmp.l #0,a0
+000010AC  6700 0026                 60      beq MAINloop_done
+000010B0                            61      ; print instruction to user
+000010B0  303C 000D                 62      move #13,d0
+000010B4  4E4F                      63      trap #15
+000010B6  5281                      64      addi.l #1,d1 ; i++
+000010B8  4EF8 108E                 65      jmp MAINInnerLoop
+000010BC                            66  MAINInnerLoopDone
+000010BC                            67      ; ask user if he wants to print next 10 instruction
+000010BC  303C 000E                 68      move #14,d0
+000010C0  43F9 000025E2             69      lea next10instruction_msg,a1
+000010C6  4E4F                      70      trap #15
+000010C8                            71      ; wait for user to hit enter key
+000010C8  7005                      72      move.l #5,d0
+000010CA  4E4F                      73      trap #15
+000010CC  0C01 000D                 74      cmpi.b #13,d1
+000010D0  6700 003A                 75      beq MAINClear
+000010D4                            76  MAINloop_done
+000010D4                            77      ; ask user if he wants to restart or finish the program
+000010D4  303C 000E                 78      move #14,d0
+000010D8  43F9 0000260E             79      lea restart_msg,a1
+000010DE  4E4F                      80      trap #15
+000010E0                            81      ; read option from user 
+000010E0  7005                      82      move.l #5,d0
+000010E2  4E4F                      83      trap #15
+000010E4                            84      ; print new line
+000010E4  303C 000D                 85      move #13,d0
+000010E8  43F9 000026BC             86      lea new_line,a1
+000010EE  4E4F                      87      trap #15
+000010F0  0C01 0079                 88      cmpi.b #$79,d1 ; compare with assci of 'y' 
+000010F4  6700 FF1C                 89      beq MAINagain
+000010F8                            90  MAINdone
+000010F8                            91      ; exit program 
+000010F8  7009                      92      move.l #9,d0
+000010FA  4E4F                      93      trap #15
+000010FC                            94  MAINerror_1
+000010FC  303C 000D                 95      move #13,d0
+00001100  43F9 000025B2             96      lea error_msg1,a1
+00001106  4E4F                      97      trap #15
+00001108  4EF8 1012                 98      jmp MAINagain
+0000110C                            99  MAINClear
+0000110C                           100      ; clear screen
+0000110C  303C 000B                101      move #11,d0
+00001110  323C FF00                102      move.w #$ff00,d1
+00001114  4E4F                     103      trap #15
+00001116  4EF8 108C                104      jmp MAINloop
+0000111A                           105      
+0000111A                           106      
+0000111A                           107      INCLUDE 'subroutine.x68'
+0000111A                           108      ; dissember current instruction in buffer than return 
+0000111A                           109      ; a0 start address
+0000111A                           110      ; a1 end address
+0000111A                           111      ; return 
+0000111A                           112      ; a0 address of next instruction 
+0000111A                           113      ; a1 address of disassember code 
+0000111A                           114      ; if start address >= end address return will be 0 on both a0 and a1
+0000111A                           115  disassemblerRegs Reg d0-d6/a2-a3  
+0000111A                           116  disassembler
+0000111A  48E7 FE30                117      movem.l disassemblerRegs,-(sp)
+0000111E                           118      
+0000111E  2448                     119      move.l a0,a2 ; save a0 in a2
+00001120  2649                     120      move.l a1,a3 ; save a1 in a3
+00001122                           121      ; we need to bytes 
+00001122                           122      ; so we check if we have 2 bytes
+00001122  220B                     123      move.l a3,d1
+00001124  200A                     124      move.l a2,d0
+00001126  9280                     125      sub.l d0,d1
+00001128  B2BC 00000002            126      cmp.l #2,d1
+0000112E  6D00 0950                127      blt disassemblerReturn0 ; we need 2 bytes 
+00001132                           128      
+00001132                           129      
+00001132  4286                     130      clr.l d6 ; default value is 0 for update if the current instruction have more than 2 byte size
+00001134                           131      ; write start address to instruction_str
+00001134  2008                     132      move.l a0,d0
+00001136  43F9 00002378            133      lea instruction_str,a1
+0000113C  7201                     134      move.l #1,d1 ; d1 = 1 for padding zeros
+0000113E  7408                     135      move.l #8,d2 ; for write  8 digit at max
+00001140  4EB9 000022FC            136      jsr Hex2Str
+00001146                           137      
+00001146                           138      ; append separate between address and instruction 
+00001146  41F9 00002378            139      lea instruction_str,a0
+0000114C  43F9 000024CC            140      lea separate ,a1 
+00001152  4EB9 000022D4            141      jsr strcat 
+00001158                           142      
+00001158  3A12                     143      move.w (a2),d5 
+0000115A                           144      ; d5 = instruction
+0000115A  2005                     145      move.l d5,d0
+0000115C  720C                     146      move.l #12,d1
+0000115E  E2A8                     147      lsr.l d1,d0 ; d0 = opcode 
+00001160  6700 0738                148      beq disassemblerG1
+00001164  B03C 000D                149      cmp.b #$d,d0
+00001168  6700 004C                150      beq disassemblerAdd
+0000116C  B03C 0005                151      cmp.b #5,d0
+00001170  6700 005C                152      beq disassemblerAddQ
+00001174  B03C 000C                153      cmp.b #$c,d0
+00001178  6700 0102                154      beq disassemblerAnd
+0000117C  B03C 000E                155      cmp.b #$e,d0
+00001180  6700 0112                156      beq disassemblerAslAsrLslLsr ; ASL ASR LSL LSR ROL ROR
+00001184  B03C 0006                157      cmp.b #6,d0
+00001188  6700 02A2                158      beq disassemblerBcc ; bra included here too
+0000118C  B03C 0004                159      cmp.b #4,d0
+00001190  6700 0356                160      beq disassembler4 ; we check for jsr and lea and movem and nop and not and rts 
+00001194  6D00 0590                161      blt disassemblerless4 ; we check for move and movea
+00001198  B03C 0007                162      cmp.b #7,d0
+0000119C  6700 0654                163      beq disassemblerMoveq
+000011A0  B03C 0008                164      cmp.b #8,d0
+000011A4  6700 06C4                165      beq disassemblerOr
+000011A8  B03C 0009                166      cmp.b #9,d0
+000011AC  6700 06D4                167      beq disassemblerSub
+000011B0  4EF9 00001A88            168      jmp disassemblerError ; others we will decode them as data
+000011B6                           169  disassemblerAdd
+000011B6                           170      ; append 'ADD'
+000011B6  41F9 00002378            171      lea instruction_str,a0
+000011BC  43F9 00002440            172      lea opcode_ADD,a1 
+000011C2  4EB9 000022D4            173      jsr strcat
+000011C8  4EF9 0000199C            174      jmp disassemblerAddSub
+000011CE                           175  disassemblerAddQ
+000011CE                           176      ; append 'ADDQ'
+000011CE  41F9 00002378            177      lea instruction_str,a0
+000011D4  43F9 00002449            178      lea opcode_ADDQ,a1 
+000011DA  4EB9 000022D4            179      jsr strcat
+000011E0  2005                     180      move.l d5,d0
+000011E2  EC88                     181      lsr.l #6,d0
+000011E4  C0BC 00000003            182      and.l #3,d0 ; d0 = size 
+000011EA  0C80 00000003            183      cmpi.l #3,d0
+000011F0  6700 0896                184      beq disassemblerError 
+000011F4                           185      ; d0 = bit 8 must be 0
+000011F4  2205                     186      move.l d5,d1
+000011F6  E089                     187      lsr.l #8,d1
+000011F8  C2BC 00000001            188      and.l #1,d1
+000011FE  6600 0888                189      bne disassemblerError 
+00001202                           190      ; we write size 
+00001202  4EB9 00001AF0            191      jsr OpcodeSize
+00001208                           192      
+00001208  2005                     193      move.l d5,d0
+0000120A  E088                     194      lsr.l #8,d0
+0000120C  E288                     195      lsr.l #1,d0
+0000120E  C0BC 00000007            196      and.l #7,d0
+00001214  6600 0004                197      bne disassemblerAddQData
+00001218  7008                     198      move.l #8,d0
+0000121A                           199  disassemblerAddQData
+0000121A                           200      ; append data
+0000121A  4EB9 00001A8E            201      jsr WriteData
+00001220                           202      
+00001220                           203      ; append ','
+00001220  41F9 00002378            204      lea instruction_str,a0
+00001226  43F9 000024BD            205      lea comma,a1 
+0000122C  4EB9 000022D4            206      jsr strcat
+00001232                           207      
+00001232  2605                     208      move.l d5,d3
+00001234  E68B                     209      lsr.l #3,d3
+00001236  0283 00000007            210      andi.l #7,d3
+0000123C  0C03 0001                211      cmpi.b #1,d3
+00001240  6600 0010                212      bne disassemblerAddQEA
+00001244                           213      ; here mode = 1
+00001244  2005                     214      move.l d5,d0
+00001246  EC88                     215      lsr.l #6,d0
+00001248  C0BC 00000003            216      and.l #3,d0 ; d0 = size
+0000124E  6700 0838                217      beq disassemblerError ; error no byte with An
+00001252                           218  disassemblerAddQEA
+00001252                           219      ; d3 = mode
+00001252  2005                     220      move.l d5,d0
+00001254  0280 0000003F            221      andi.l #$3f,d0 ; d0 = EFFECTIVE ADDRESS
+0000125A  727F                     222      move.l #$7f,d1 ; here we skip An #data for destination 
+0000125C  2406                     223      move.l d6,d2
+0000125E  5482                     224      addi.l #2,d2
+00001260  2432 2000                225      move.l (a2,d2),d2
+00001264                           226      ; we don't want size because #data not implemented here
+00001264  4EB9 00001D16            227      jsr effectiveAddress
+0000126A  0C80 00000000            228      cmpi.l #0,d0
+00001270  6700 0816                229      beq disassemblerError
+00001274  DC81                     230      add.l d1,d6 ; update d6 
+00001276  4EF9 00001A6E            231      jmp disassemblerUpdate
+0000127C                           232  disassemblerAnd
+0000127C                           233      ; append 'AND'
+0000127C  41F9 00002378            234      lea instruction_str,a0
+00001282  43F9 00002457            235      lea opcode_AND,a1 
+00001288  4EB9 000022D4            236      jsr strcat
+0000128E  4EF9 0000198E            237      jmp disassemblerOrAnd
+00001294                           238  disassemblerAslAsrLslLsr 
+00001294  2005                     239      move.l d5,d0
+00001296  EC88                     240      lsr.l #6,d0
+00001298  0280 00000003            241      andi.l #3,d0 ; d0 = size
+0000129E  0C00 0003                242      cmpi.b #3,d0
+000012A2  6700 001A                243      beq disassemblerAslAsrLslLsrM
+000012A6                           244      ; here immediate or register 
+000012A6  2205                     245      move.l d5,d1
+000012A8  E689                     246      lsr.l #3,d1
+000012AA  0281 00000003            247      andi.l #3,d1 ; d1 = type (0 arithmetic) (1 logical) (3 rotate)
+000012B0  0C01 0002                248      cmpi.b #2,d1 ; bad type  
+000012B4  6700 07D2                249      beq disassemblerError 
+000012B8  4EF9 000012DC            250      jmp disassemblerAslAsrLslLsrU
+000012BE                           251  disassemblerAslAsrLslLsrM
+000012BE                           252      ; here memory
+000012BE  2205                     253      move.l d5,d1
+000012C0  E089                     254      lsr.l #8,d1
+000012C2  E289                     255      lsr.l #1,d1
+000012C4  0281 00000007            256      andi.l #7,d1 ; d1 = type (0 arithmetic) (1 logical) (3 rotate)
+000012CA  0C01 0002                257      cmpi.b #2,d1 ; bad type  
+000012CE  6700 07B8                258      beq disassemblerError 
+000012D2  0C01 0003                259      cmpi.b #3,d1
+000012D6  6E00 07B0                260      bgt disassemblerError 
+000012DA  5580                     261      subi.l #2,d0 ; correct size
+000012DC                           262  disassemblerAslAsrLslLsrU
+000012DC  0C01 0000                263      cmpi.b #0,d1
+000012E0  6700 0030                264      beq disassemblerAslAsrLslLsrA
+000012E4  0C01 0001                265      cmpi.b #1,d1
+000012E8  6700 0034                266      beq disassemblerAslAsrLslLsrL
+000012EC  0C01 0003                267      cmpi.b #3,d1
+000012F0  6700 0008                268      beq disassemblerRolRor
+000012F4  4EF9 00001A88            269      jmp disassemblerError 
+000012FA                           270  disassemblerRolRor
+000012FA                           271      ; append 'RO'
+000012FA  41F9 00002378            272      lea instruction_str,a0
+00001300  43F9 0000249F            273      lea opcode_RO,a1 
+00001306  4EB9 000022D4            274      jsr strcat
+0000130C  4EF9 00001342            275      jmp disassemblerRolRorU
+00001312                           276  disassemblerAslAsrLslLsrA
+00001312                           277      ; append 'A'
+00001312  4EB9 00001AD4            278      jsr AppendA
+00001318  4EF9 00001330            279      jmp disassemblerAslAsrLslLsrAL
+0000131E                           280  disassemblerAslAsrLslLsrL
+0000131E                           281      ; append 'L'
+0000131E  41F9 00002378            282      lea instruction_str,a0
+00001324  43F9 000024AB            283      lea lChar,a1 
+0000132A  4EB9 000022D4            284      jsr strcat
+00001330                           285  disassemblerAslAsrLslLsrAL
+00001330                           286      ; append 'S'
+00001330  41F9 00002378            287      lea instruction_str,a0
+00001336  43F9 000024B3            288      lea sChar,a1 
+0000133C  4EB9 000022D4            289      jsr strcat
+00001342                           290  disassemblerRolRorU
+00001342  2405                     291      move.l d5,d2
+00001344  E08A                     292      lsr.l #8,d2
+00001346  0282 00000001            293      andi.l #1,d2 ; d2 = dr
+0000134C  0C02 0000                294      cmpi.b #0,d2
+00001350  6700 001A                295      beq disassemblerAslAsrLslLsrR
+00001354                           296      ; here left
+00001354                           297      ; append 'L'
+00001354  41F9 00002378            298      lea instruction_str,a0
+0000135A  43F9 000024AB            299      lea lChar,a1 
+00001360  4EB9 000022D4            300      jsr strcat
+00001366  4EF9 0000137E            301      jmp disassemblerAslAsrLslLsrUU
+0000136C                           302  disassemblerAslAsrLslLsrR
+0000136C                           303      ; append 'R'
+0000136C  41F9 00002378            304      lea instruction_str,a0
+00001372  43F9 000024B5            305      lea rChar,a1 
+00001378  4EB9 000022D4            306      jsr strcat
+0000137E                           307  disassemblerAslAsrLslLsrUU
+0000137E  4EB9 00001AF0            308      jsr OpcodeSize
+00001384  2005                     309      move.l d5,d0
+00001386  EC88                     310      lsr.l #6,d0
+00001388  0280 00000003            311      andi.l #3,d0 ; d0 = size
+0000138E  0C00 0003                312      cmpi.b #3,d0
+00001392  6600 002A                313      bne disassemblerAslAsrLslLsrIR
+00001396                           314      ; here memory
+00001396  2005                     315      move.l d5,d0
+00001398  0280 0000003F            316      andi.l #$3f,d0 ; d0 = EFFECTIVE ADDRESS
+0000139E  727C                     317      move.l #$7C,d1 ; here we skip Dn An #data for destination 
+000013A0  7402                     318      move.l #2,d2
+000013A2  2432 2000                319      move.l (a2,d2),d2
+000013A6                           320      ; we don't want size because #data not implemented here
+000013A6  4EB9 00001D16            321      jsr effectiveAddress
+000013AC  0C80 00000000            322      cmpi.l #0,d0
+000013B2  6700 06D4                323      beq disassemblerError
+000013B6  DC81                     324      add.l d1,d6 ; update d6 
+000013B8  4EF9 00001A6E            325      jmp disassemblerUpdate
+000013BE                           326  disassemblerAslAsrLslLsrIR
+000013BE  2005                     327      move.l d5,d0
+000013C0  E088                     328      lsr.l #8,d0
+000013C2  E288                     329      lsr.l #1,d0
+000013C4  0280 00000007            330      andi.l #7,d0 ; d0 = count register
+000013CA  2205                     331      move.l d5,d1
+000013CC  EA89                     332      lsr.l #5,d1
+000013CE  0281 00000001            333      andi.l #1,d1 ; d1 = ir
+000013D4  6700 001C                334      beq disassemblerAslAsrLslLsrI
+000013D8                           335      ; here register
+000013D8  7201                     336      move.l #1,d1 ; here we do just Dn 
+000013DA                           337      ; we don't need to use d2
+000013DA                           338      ; we don't want size because #data not implemented here 
+000013DA  4EB9 00001D16            339      jsr effectiveAddress
+000013E0  0C80 00000000            340      cmpi.l #0,d0
+000013E6  6700 06A0                341      beq disassemblerError
+000013EA  DC81                     342      add.l d1,d6 ; update d6 
+000013EC  4EF9 000013F8            343      jmp disassemblerAslAsrLslLsrIRU
+000013F2                           344  disassemblerAslAsrLslLsrI
+000013F2                           345      ; append data
+000013F2  4EB9 00001A8E            346      jsr WriteData
+000013F8                           347  disassemblerAslAsrLslLsrIRU
+000013F8                           348      ; append ','
+000013F8  41F9 00002378            349      lea instruction_str,a0
+000013FE  43F9 000024BD            350      lea comma,a1 
+00001404  4EB9 000022D4            351      jsr strcat
+0000140A                           352      ; here register
+0000140A  2005                     353      move.l d5,d0
+0000140C  0280 00000007            354      andi.l #7,d0 ; d0 = EFFECTIVE ADDRESS
+00001412  7201                     355      move.l #1,d1 ; here we do just Dn 
+00001414                           356      ; we don't need to use d2
+00001414                           357      ; we don't want size because #data not implemented here
+00001414  4EB9 00001D16            358      jsr effectiveAddress
+0000141A  0C80 00000000            359      cmpi.l #0,d0
+00001420  6700 0666                360      beq disassemblerError
+00001424  DC81                     361      add.l d1,d6 ; update d6 
+00001426  4EF9 00001A6E            362      jmp disassemblerUpdate
+0000142C                           363  disassemblerBcc ; bra included here too
+0000142C                           364      ; append 'B'
+0000142C  41F9 00002378            365      lea instruction_str,a0
+00001432  43F9 000024A7            366      lea bChar,a1 
+00001438  4EB9 000022D4            367      jsr strcat
+0000143E                           368      ; d0 = CONDITION 
+0000143E  2005                     369      move.l d5,d0
+00001440  E088                     370      lsr.l #8,d0
+00001442  0280 0000000F            371      andi.l #$f,d0 ; d0 = CONDITION
+00001448  6700 0026                372      beq disassemblerBRA ; here BRA  case
+0000144C  0C80 0000000F            373      cmpi.l #$f,d0
+00001452  6700 0034                374      beq disassemblerBLE ; here BLE case
+00001456  0C80 0000000E            375      cmpi.l #$e,d0
+0000145C  6700 0042                376      beq disassemblerBGT ; here BGT case
+00001460  0C80 00000007            377      cmpi.l #$7,d0
+00001466  6700 0050                378      beq disassemblerBEQ ; here BEQ case
+0000146A                           379      ; we skip other cases  
+0000146A  4EF9 00001A88            380      jmp disassemblerError 
+00001470                           381  disassemblerBRA
+00001470                           382      ; append 'RA'
+00001470  41F9 00002378            383      lea instruction_str,a0
+00001476  43F9 00002480            384      lea opcode_RA,a1 
+0000147C  4EB9 000022D4            385      jsr strcat
+00001482  4EF9 000014CA            386      jmp BriefExtensionWordFormatU
+00001488                           387  disassemblerBLE
+00001488                           388      ; append 'LE'
+00001488  41F9 00002378            389      lea instruction_str,a0
+0000148E  43F9 00002478            390      lea opcode_LE,a1 
+00001494  4EB9 000022D4            391      jsr strcat
+0000149A  4EF9 000014CA            392      jmp BriefExtensionWordFormatU
+000014A0                           393  disassemblerBGT
+000014A0                           394      ; append 'GT'
+000014A0  41F9 00002378            395      lea instruction_str,a0
+000014A6  43F9 00002474            396      lea opcode_GT,a1 
+000014AC  4EB9 000022D4            397      jsr strcat
+000014B2  4EF9 000014CA            398      jmp BriefExtensionWordFormatU
+000014B8                           399  disassemblerBEQ
+000014B8                           400      ; append 'EQ'
+000014B8  41F9 00002378            401      lea instruction_str,a0
+000014BE  43F9 0000247C            402      lea opcode_EQ,a1 
+000014C4  4EB9 000022D4            403      jsr strcat
+000014CA                           404  BriefExtensionWordFormatU
+000014CA  2005                     405      move.l d5,d0
+000014CC  0280 000000FF            406      andi.l #$ff,d0 ; d0 = displacement
+000014D2  220A                     407      move.l a2,d1
+000014D4  7402                     408      move.l #2,d2
+000014D6  2432 2000                409      move.l (a2,d2),d2
+000014DA  4EB9 00001F9A            410      jsr BriefExtensionWordFormat
+000014E0  DC81                     411      add.l d1,d6 ; update d6
+000014E2  4EF9 00001A6E            412      jmp disassemblerUpdate
+000014E8                           413      
+000014E8                           414  disassembler4  ; we check for jsr and lea and movem and nop and not and rts 
+000014E8  BA7C 4E71                415      cmp.w #$4e71,d5
+000014EC  6700 0208                416      beq disassemblerNop
+000014F0  BA7C 4E75                417      cmp.w #$4e75,d5
+000014F4  6700 0218                418      beq disassemblerRts
+000014F8  2005                     419      move.l d5,d0
+000014FA  E088                     420      lsr.l #8,d0
+000014FC  0280 0000000F            421      andi.l #$f,d0 ; d0 = 4 bit (bit 8 bit 9 bit 10 bit 11)
+00001502  0C00 0006                422      cmpi.b #6,d0
+00001506  6700 0166                423      beq disassemblerNot
+0000150A  0C00 000E                424      cmpi.b #$e,d0
+0000150E  6700 01AA                425      beq disassemblerJsr
+00001512  2005                     426      move.l d5,d0
+00001514  EC88                     427      lsr.l #6,d0
+00001516  0280 00000007            428      andi.l #7,d0 ; d0 = Opmode
+0000151C                           429      ; opmode = 011 or opmode = 010 this mean movem 
+0000151C  B03C 0002                430      cmp.b #2,d0
+00001520  6700 0018                431      beq disassemblerMovem
+00001524  B03C 0003                432      cmp.b #3,d0
+00001528  6700 0010                433      beq disassemblerMovem
+0000152C                           434      ; opmode = 111 this mean lea 
+0000152C  B03C 0007                435      cmp.b #7,d0
+00001530  6700 0102                436      beq disassemblerLea
+00001534  4EF9 00001A88            437      jmp disassemblerError 
+0000153A                           438      
+0000153A                           439  disassemblerMovem
+0000153A  2005                     440      move.l d5,d0
+0000153C  EE88                     441      lsr.l #7,d0
+0000153E  0280 00000007            442      andi.l #7,d0
+00001544  0C00 0001                443      cmpi.b #1,d0
+00001548  6600 053E                444      bne disassemblerError ; d0 = 3 bit must be (001) ( bit 9 bit 8 bit 7 )
+0000154C  2005                     445      move.l d5,d0
+0000154E  E088                     446      lsr.l #8,d0
+00001550  E688                     447      lsr.l #3,d0
+00001552  0280 00000001            448      andi.l #1,d0
+00001558  6700 052E                449      beq disassemblerError ; d0 = bit11 and must be 1
+0000155C                           450      ; here good format for moveq
+0000155C                           451      ; append 'MOVEM'
+0000155C  41F9 00002378            452      lea instruction_str,a0
+00001562  43F9 00002499            453      lea opcode_MOVEM,a1 
+00001568  4EB9 000022D4            454      jsr strcat
+0000156E  2005                     455      move.l d5,d0
+00001570  EC88                     456      lsr.l #6,d0
+00001572  0280 00000001            457      andi.l #1,d0 
+00001578  5280                     458      addi.l #1,d0 ; d0 = size
+0000157A  4EB9 00001AF0            459      jsr OpcodeSize
+00001580  2805                     460      move.l d5,d4
+00001582  E08C                     461      lsr.l #8,d4
+00001584  E48C                     462      lsr.l #2,d4
+00001586  0284 00000001            463      andi.l #1,d4 ; d4 = dr
+0000158C  6700 0048                464      beq disassemblerMovemRM 
+00001590                           465      ; here Memory to register.
+00001590  2005                     466      move.l d5,d0
+00001592  0280 0000003F            467      andi.l #$3f,d0
+00001598  726C                     468      move.l #$6c,d1
+0000159A  7404                     469      move.l #4,d2
+0000159C  2432 2000                470      move.l (a2,d2),d2
+000015A0                           471      ; we don't need to use size no #DATA here
+000015A0  4EB9 00001D16            472      jsr effectiveAddress
+000015A6  B03C 0000                473      cmp.b #0,d0
+000015AA  6700 04DC                474      beq disassemblerError 
+000015AE  DC81                     475      add.l d1,d6 ; update d6 
+000015B0                           476      ; append ','
+000015B0  41F9 00002378            477      lea instruction_str,a0
+000015B6  43F9 000024BD            478      lea comma,a1 
+000015BC  4EB9 000022D4            479      jsr strcat
+000015C2  7002                     480      move.l #2,d0 ; d0 = 2
+000015C4  3032 0000                481      move.w (a2,d0),d0 ; d0 = mask
+000015C8  4EB9 000020BC            482      jsr registerList
+000015CE  5486                     483      addi.l #2,d6 ; update d6 
+000015D0  4EF9 00001A6E            484      jmp disassemblerUpdate
+000015D6                           485  disassemblerMovemRM 
+000015D6  2205                     486      move.l d5,d1
+000015D8  E689                     487      lsr.l #3,d1
+000015DA  0281 00000007            488      andi.l #7,d1 ; d1 = mode
+000015E0  7002                     489      move.l #2,d0 ; d0 = 2
+000015E2  3032 0000                490      move.w (a2,d0),d0 ; d0 = mask
+000015E6  0C01 0004                491      cmpi.b #4,d1
+000015EA  6600 0008                492      bne disassemblerMovemRMU
+000015EE                           493      ; we need to reverse here
+000015EE  4EB9 00002092            494      jsr reverseBit16
+000015F4                           495  disassemblerMovemRMU
+000015F4  4EB9 000020BC            496      jsr registerList
+000015FA  5486                     497      addi.l #2,d6 ; update d6
+000015FC                           498      ; append ','
+000015FC  41F9 00002378            499      lea instruction_str,a0
+00001602  43F9 000024BD            500      lea comma,a1 
+00001608  4EB9 000022D4            501      jsr strcat
+0000160E  2005                     502      move.l d5,d0
+00001610  0280 0000003F            503      andi.l #$3f,d0
+00001616  7274                     504      move.l #$74,d1
+00001618  7404                     505      move.l #4,d2
+0000161A  2432 2000                506      move.l (a2,d2),d2
+0000161E                           507      ; we don't need to use size no #DATA here
+0000161E  4EB9 00001D16            508      jsr effectiveAddress
+00001624  B03C 0000                509      cmp.b #0,d0
+00001628  6700 045E                510      beq disassemblerError 
+0000162C  DC81                     511      add.l d1,d6 ; update d6 
+0000162E  4EF9 00001A6E            512      jmp disassemblerUpdate
+00001634                           513  disassemblerLea
+00001634                           514      ; append 'LEA '
+00001634  41F9 00002378            515      lea instruction_str,a0
+0000163A  43F9 0000246F            516      lea opcode_LEA,a1 
+00001640  4EB9 000022D4            517      jsr strcat
+00001646  2005                     518      move.l d5,d0
+00001648  0280 00000FFF            519      andi.l #$fff,d0
+0000164E  7264                     520      move.l #$64,d1 ; source (An) (xxx).w (xxx).l
+00001650  7402                     521      move.l #2,d2 ; destination An
+00001652  2632 2000                522      move.l (a2,d2),d3
+00001656  2803                     523      move.l d3,d4
+00001658  4EB9 00001BCE            524      jsr disassemblerG2Fun
+0000165E  0C00 0000                525      cmpi.b #0,d0
+00001662  6700 0424                526      beq disassemblerError 
+00001666  DC81                     527      add.l d1,d6 ; update d6 
+00001668  4EF9 00001A6E            528      jmp disassemblerUpdate
+0000166E                           529  disassemblerNot
+0000166E                           530      ; append 'NOT'
+0000166E  41F9 00002378            531      lea instruction_str,a0
+00001674  43F9 00002489            532      lea opcode_NOT,a1 
+0000167A  4EB9 000022D4            533      jsr strcat
+00001680  2005                     534      move.l d5,d0
+00001682  EC88                     535      lsr.l #6,d0
+00001684  0280 00000003            536      andi.l #3,d0
+0000168A  4EB9 00001AF0            537      jsr OpcodeSize
+00001690  2005                     538      move.l d5,d0
+00001692  0280 0000003F            539      andi.l #$3f,d0 ; d0 = EFFECTIVE ADDRESS
+00001698  727D                     540      move.l #$7D,d1 ; here for skip An and #DATA
+0000169A  2406                     541      move.l d6,d2
+0000169C  5482                     542      addi.l #2,d2
+0000169E  2432 2000                543      move.l (a2,d2),d2
+000016A2                           544      ; we don't want size because #data not implemented here 
+000016A2  4EB9 00001D16            545      jsr effectiveAddress
+000016A8  0C80 00000000            546      cmpi.l #0,d0
+000016AE  6700 03D8                547      beq disassemblerError
+000016B2  DC81                     548      add.l d1,d6 ; update d6 
+000016B4  4EF9 00001A6E            549      jmp disassemblerUpdate
+000016BA                           550  disassemblerJsr
+000016BA                           551      ; append 'JSR '
+000016BA  41F9 00002378            552      lea instruction_str,a0
+000016C0  43F9 00002484            553      lea opcode_JSR,a1 
+000016C6  4EB9 000022D4            554      jsr strcat
+000016CC  2005                     555      move.l d5,d0
+000016CE  0280 0000003F            556      andi.l #$3f,d0 ; d0 = EFFECTIVE ADDRESS
+000016D4  7264                     557      move.l #$64,d1 ; here for (An)  (xxx).W (xxx).L  and skip other 
+000016D6  2406                     558      move.l d6,d2
+000016D8  5482                     559      addi.l #2,d2
+000016DA  2432 2000                560      move.l (a2,d2),d2
+000016DE                           561      ; we don't want size because #data not implemented here 
+000016DE  4EB9 00001D16            562      jsr effectiveAddress
+000016E4  0C80 00000000            563      cmpi.l #0,d0
+000016EA  6700 039C                564      beq disassemblerError
+000016EE  DC81                     565      add.l d1,d6 ; update d6 
+000016F0  4EF9 00001A6E            566      jmp disassemblerUpdate
+000016F6                           567  disassemblerNop
+000016F6                           568      ; append 'NOP'
+000016F6  41F9 00002378            569      lea instruction_str,a0
+000016FC  43F9 00002467            570      lea opcode_NOP,a1 
+00001702  4EB9 000022D4            571      jsr strcat 
+00001708  4EF9 00001A6E            572      jmp disassemblerUpdate
+0000170E                           573  disassemblerRts
+0000170E                           574      ; append 'RTS'
+0000170E  41F9 00002378            575      lea instruction_str,a0
+00001714  43F9 0000246B            576      lea opcode_RTS,a1 
+0000171A  4EB9 000022D4            577      jsr strcat
+00001720  4EF9 00001A6E            578      jmp disassemblerUpdate
+00001726                           579  disassemblerless4 ; we check for move and movea
+00001726                           580      ; d0 = size
+00001726  2005                     581      move.l d5,d0
+00001728  E088                     582      lsr.l #8,d0
+0000172A  E888                     583      lsr.l #4,d0
+0000172C  0280 00000003            584      andi.l #3,d0
+00001732  6700 0354                585      beq disassemblerError ; bad size
+00001736  0C00 0002                586      cmpi.b #2,d0
+0000173A  6700 0014                587      beq disassemblerless4SizeU
+0000173E                           588      ; here d0 = 1 or d0 = 11
+0000173E  0C00 0001                589      cmpi.b #1,d0
+00001742  6700 000A                590      beq disassemblerless4SizeB
+00001746                           591      ; here d0 = 11 word 
+00001746  5580                     592      subi.l #2,d0 ; d0 = 01
+00001748  4EF9 00001750            593      jmp disassemblerless4SizeU
+0000174E                           594  disassemblerless4SizeB
+0000174E                           595      ; here d0 = 1
+0000174E  5380                     596      subi.l #1,d0 ; d0 = 00
+00001750                           597  disassemblerless4SizeU
+00001750                           598       
+00001750                           599      ; append 'MOVE'
+00001750  41F9 00002378            600      lea instruction_str,a0
+00001756  43F9 0000248D            601      lea opcode_MOVE,a1 
+0000175C  4EB9 000022D4            602      jsr strcat
+00001762  2205                     603      move.l d5,d1
+00001764  EC89                     604      lsr.l #6,d1
+00001766  0281 00000007            605      andi.l #7,d1 ; d1 = destination mode
+0000176C  2405                     606      move.l d5,d2
+0000176E  E68A                     607      lsr.l #3,d2
+00001770  0282 00000007            608      andi.l #7,d2 ; d2 = source mode
+00001776  0C01 0007                609      cmpi.b #7,d1
+0000177A  6600 002C                610      bne disassemblerless4_7
+0000177E  0C02 0007                611      cmpi.b #7,d2
+00001782  6600 0024                612      bne disassemblerless4_7
+00001786                           613      ; both mode = 7 
+00001786  7602                     614      move.l #2,d3
+00001788  2632 3000                615      move.l (a2,d3),d3
+0000178C  0C00 0002                616      cmpi.b #2,d0
+00001790  6600 000A                617      bne disassemblerless477BW
+00001794  7806                     618      move.l #6,d4
+00001796  4EF9 0000179E            619      jmp disassemblerless477BWL
+0000179C                           620  disassemblerless477BW
+0000179C  7804                     621      move.l #4,d4
+0000179E                           622  disassemblerless477BWL
+0000179E  2832 4000                623      move.l (a2,d4),d4
+000017A2  4EF9 000017B4            624      jmp disassemblerless4SizeDone
+000017A8                           625  disassemblerless4_7
+000017A8                           626      ; here one mode is 7 or both mod not 7
+000017A8  7602                     627      move.l #2,d3
+000017AA  2632 3000                628      move.l (a2,d3),d3
+000017AE  7802                     629      move.l #2,d4
+000017B0  2832 4000                630      move.l (a2,d4),d4
+000017B4                           631  disassemblerless4SizeDone
+000017B4  2A00                     632      move.l d0,d5 ; d5 = size
+000017B6  B23C 0001                633      cmp.b #1,d1
+000017BA  6600 0008                634      bne disassemblerless4U
+000017BE  4EB9 00001AD4            635      jsr AppendA
+000017C4                           636  disassemblerless4U
+000017C4  4EB9 00001AF0            637      jsr OpcodeSize
+000017CA  3012                     638      move.w (a2),d0
+000017CC  0280 00000FFF            639      andi.l #$fff,d0
+000017D2  223C 000000FF            640      move.l #$ff,d1
+000017D8  747F                     641      move.l #$7f,d2
+000017DA  4EB9 00001C60            642      jsr disassemblerG3Fun
+000017E0  0C80 00000000            643      cmpi.l #0,d0
+000017E6  6700 02A0                644      beq disassemblerError 
+000017EA  DC81                     645      add.l d1,d6 ; update d6 
+000017EC  4EF9 00001A6E            646      jmp disassemblerUpdate
+000017F2                           647  disassemblerMoveq
+000017F2                           648      ; d0 = bit8
+000017F2  2005                     649      move.l d5,d0
+000017F4  E088                     650      lsr.l #8,d0
+000017F6  0280 00000001            651      andi.l #1,d0 ; d0 = bit8
+000017FC  6600 028A                652      bne disassemblerError ; bad bit 
+00001800                           653      ; append 'MOVEQ '
+00001800  41F9 00002378            654      lea instruction_str,a0
+00001806  43F9 00002492            655      lea opcode_MOVEQ,a1 
+0000180C  4EB9 000022D4            656      jsr strcat 
+00001812                           657      ; source
+00001812  703C                     658      move.l #$3c,d0 ; mode = 111 and register 100
+00001814  223C 00000080            659      move.l #$80,d1 ; for just #DATA
+0000181A  2405                     660      move.l d5,d2
+0000181C  0282 000000FF            661      andi.l #$ff,d2 ; d2 = DATA
+00001822  7602                     662      move.l #2,d3 ; d3 = size = 10
+00001824  4EB9 00001D16            663      jsr effectiveAddress
+0000182A  0C80 00000000            664      cmpi.l #0,d0
+00001830  6700 0256                665      beq disassemblerError
+00001834                           666      ; we don't need to update d6 
+00001834                           667      ; append ','
+00001834  41F9 00002378            668      lea instruction_str,a0
+0000183A  43F9 000024BD            669      lea comma,a1 
+00001840  4EB9 000022D4            670      jsr strcat
+00001846  2005                     671      move.l d5,d0
+00001848  E088                     672      lsr.l #8,d0
+0000184A  E288                     673      lsr.l #1,d0
+0000184C  0280 00000007            674      andi.l #7,d0 ; d0 = register (d0 = EFFECTIVE ADDRESS) mode here = 0 because Dn
+00001852  7201                     675      move.l #1,d1 ; we do just Dn
+00001854                           676      ; we don't want to use d2 because (xxx).L (xxx).W #DATA not used here 
+00001854                           677      ; we don't want size because #data not implemented here :) ( so we don't need to use d3 )
+00001854  4EB9 00001D16            678      jsr effectiveAddress
+0000185A  0C80 00000000            679      cmpi.l #0,d0
+00001860  6700 0226                680      beq disassemblerError
+00001864                           681      ; we don't need to update d6 
+00001864  4EF9 00001A6E            682      jmp disassemblerUpdate
+0000186A                           683  disassemblerOr
+0000186A                           684      ; append 'OR'
+0000186A  41F9 00002378            685      lea instruction_str,a0
+00001870  43F9 00002460            686      lea opcode_OR,a1 
+00001876  4EB9 000022D4            687      jsr strcat
+0000187C  4EF9 0000198E            688      jmp disassemblerOrAnd
+00001882                           689  disassemblerSub
+00001882                           690      ; append 'SUB'
+00001882  41F9 00002378            691      lea instruction_str,a0
+00001888  43F9 0000244E            692      lea opcode_SUB,a1 
+0000188E  4EB9 000022D4            693      jsr strcat
+00001894  4EF9 0000199C            694      jmp disassemblerAddSub
+0000189A                           695  disassemblerG1 ; group of instruction instructions ( ADDI ANDI ORI SUBI )
+0000189A  2005                     696      move.l d5,d0
+0000189C  E088                     697      lsr.l #8,d0
+0000189E  6700 0050                698      beq disassemblerORI
+000018A2  B03C 0006                699      cmp.b #6,d0
+000018A6  6700 0018                700      beq disassemblerADDI
+000018AA  B03C 0002                701      cmp.b #2,d0
+000018AE  6700 0028                702      beq disassemblerANDI
+000018B2  B03C 0004                703      cmp.b #4,d0
+000018B6  6700 0050                704      beq disassemblerSUBI
+000018BA  4EF9 00001A88            705      jmp disassemblerError
+000018C0                           706  disassemblerADDI
+000018C0                           707      ; append 'ADDI' 
+000018C0  41F9 00002378            708      lea instruction_str,a0
+000018C6  43F9 00002444            709      lea opcode_ADDI,a1 
+000018CC  4EB9 000022D4            710      jsr strcat 
+000018D2  4EF9 0000191A            711      jmp disassemblerG1U
+000018D8                           712  disassemblerANDI
+000018D8                           713      ; append 'ANDI' 
+000018D8  41F9 00002378            714      lea instruction_str,a0
+000018DE  43F9 0000245B            715      lea opcode_ANDI,a1 
+000018E4  4EB9 000022D4            716      jsr strcat 
+000018EA  4EF9 0000191A            717      jmp disassemblerG1U
+000018F0                           718  disassemblerORI
+000018F0                           719      ; append 'ORI' 
+000018F0  41F9 00002378            720      lea instruction_str,a0
+000018F6  43F9 00002463            721      lea opcode_ORI,a1 
+000018FC  4EB9 000022D4            722      jsr strcat 
+00001902  4EF9 0000191A            723      jmp disassemblerG1U
+00001908                           724  disassemblerSUBI
+00001908                           725      ; append 'SUBI' 
+00001908  41F9 00002378            726      lea instruction_str,a0
+0000190E  43F9 00002452            727      lea opcode_SUBI,a1 
+00001914  4EB9 000022D4            728      jsr strcat 
+0000191A                           729  disassemblerG1U
+0000191A  2005                     730      move.l d5,d0
+0000191C  EC88                     731      lsr.l #6,d0
+0000191E  0280 00000003            732      andi.l #3,d0
+00001924  4EB9 00001AF0            733      jsr OpcodeSize
+0000192A                           734      
+0000192A                           735      ; source
+0000192A  703C                     736      move.l #$3c,d0 ; mode = 111 and register 100
+0000192C  72FF                     737      move.l #-1,d1 
+0000192E  2406                     738      move.l d6,d2
+00001930  5482                     739      addi.l #2,d2
+00001932  2432 2000                740      move.l (a2,d2),d2
+00001936  2605                     741      move.l d5,d3
+00001938  EC8B                     742      lsr.l #6,d3
+0000193A  0283 00000003            743      andi.l #3,d3 ; d3 = size
+00001940  4EB9 00001D16            744      jsr effectiveAddress
+00001946  0C80 00000000            745      cmpi.l #0,d0
+0000194C  6700 013A                746      beq disassemblerError
+00001950  DC81                     747      add.l d1,d6 ; update d6 
+00001952                           748      
+00001952                           749      ; append ','
+00001952  41F9 00002378            750      lea instruction_str,a0
+00001958  43F9 000024BD            751      lea comma,a1 
+0000195E  4EB9 000022D4            752      jsr strcat
+00001964                           753      
+00001964  2005                     754      move.l d5,d0
+00001966  0280 0000003F            755      andi.l #$3f,d0 ; d0 = EFFECTIVE ADDRESS
+0000196C  727D                     756      move.l #$7D,d1 ; here we skip An #data  for destination 
+0000196E  2406                     757      move.l d6,d2
+00001970  5482                     758      addi.l #2,d2
+00001972  2432 2000                759      move.l (a2,d2),d2
+00001976                           760      ; we don't want size because #data not implemented here 
+00001976  4EB9 00001D16            761      jsr effectiveAddress
+0000197C  0C80 00000000            762      cmpi.l #0,d0
+00001982  6700 0104                763      beq disassemblerError
+00001986  DC81                     764      add.l d1,d6 ; update d6 
+00001988  4EF9 00001A6E            765      jmp disassemblerUpdate
+0000198E                           766  disassemblerOrAnd
+0000198E  223C 000000FD            767      move.l #$fd,d1 ; we skip An 
+00001994  747D                     768      move.l #$7d,d2 ; we skip An also #DATA because destination can't be data
+00001996  4EF9 000019C4            769      jmp disassemblerG4Call
+0000199C                           770  disassemblerAddSub
+0000199C  223C 000000FF            771      move.l #$ff,d1 
+000019A2  747F                     772      move.l #$7f,d2 ; we skip #DATA because destination can't be data
+000019A4  2005                     773      move.l d5,d0
+000019A6  EC88                     774      lsr.l #6,d0
+000019A8  0280 00000007            775      andi.l #7,d0 ; d0 = opmode 
+000019AE  0C00 0003                776      cmpi.b #3,d0
+000019B2  6700 000A                777      beq disassemblerAddSubAn
+000019B6  0C00 0007                778      cmpi.b #7,d0
+000019BA  6600 0008                779      bne disassemblerG4Call
+000019BE                           780  disassemblerAddSubAn
+000019BE  4EB9 00001AD4            781      jsr AppendA
+000019C4                           782  disassemblerG4Call
+000019C4  2005                     783      move.l d5,d0
+000019C6  0280 00000FFF            784      andi.l #$fff,d0
+000019CC  7602                     785      move.l #2,d3
+000019CE  2632 3000                786      move.l (a2,d3),d3
+000019D2  7806                     787      move.l #6,d4
+000019D4  2832 4000                788      move.l (a2,d4),d4
+000019D8  4EB9 00001B7E            789      jsr disassemblerG4Fun
+000019DE  0C00 0000                790      cmpi.b #0,d0
+000019E2  6700 00A4                791      beq disassemblerError
+000019E6  DC81                     792      add.l d1,d6 ; update d6
+000019E8  4EF9 00001A6E            793      jmp disassemblerUpdate
+000019EE                           794  disassemblerData
+000019EE                           795      ; write start address to instruction_str
+000019EE  200A                     796      move.l a2,d0
+000019F0  43F9 00002378            797      lea instruction_str,a1
+000019F6  7201                     798      move.l #1,d1 ; d1 = 1 for padding zeros
+000019F8  7408                     799      move.l #8,d2 ; for write  8 digit at max
+000019FA  4EB9 000022FC            800      jsr Hex2Str
+00001A00                           801      
+00001A00                           802      ; append separate between address and instruction 
+00001A00  41F9 00002378            803      lea instruction_str,a0
+00001A06  43F9 000024CC            804      lea separate ,a1 
+00001A0C  4EB9 000022D4            805      jsr strcat 
+00001A12                           806      
+00001A12                           807      ; append 'DATA' 
+00001A12  41F9 00002378            808      lea instruction_str,a0
+00001A18  43F9 000024A2            809      lea data ,a1 
+00001A1E  4EB9 000022D4            810      jsr strcat 
+00001A24                           811      
+00001A24                           812      ; append ' ' 
+00001A24  41F9 00002378            813      lea instruction_str,a0
+00001A2A  43F9 000024AD            814      lea Space,a1 
+00001A30  4EB9 000022D4            815      jsr strcat 
+00001A36                           816      
+00001A36                           817      ; append '$' 
+00001A36  41F9 00002378            818      lea instruction_str,a0
+00001A3C  43F9 000024BB            819      lea sDolar,a1 
+00001A42  4EB9 000022D4            820      jsr strcat 
+00001A48                           821      
+00001A48  4280                     822      clr.l d0 ; d0 = 0
+00001A4A  3012                     823      move.w (a2),d0
+00001A4C  43F9 000023DC            824      lea data_str,a1
+00001A52  7201                     825      move.l #1,d1 ; d1 = 1 for padding zeros
+00001A54  7404                     826      move.l #4,d2 ; for write  4 digit at max
+00001A56  4EB9 000022FC            827      jsr Hex2Str
+00001A5C                           828      
+00001A5C                           829      ; append data to instruction_str
+00001A5C  41F9 00002378            830      lea instruction_str,a0
+00001A62  43F9 000023DC            831      lea data_str,a1 
+00001A68  4EB9 000022D4            832      jsr strcat  
+00001A6E                           833      
+00001A6E                           834  disassemblerUpdate
+00001A6E  204A                     835      move.l a2,a0
+00001A70  5488                     836      adda.l #2,a0
+00001A72  D1C6                     837      adda.l d6,a0 ; a0 address of next instruction 
+00001A74  43F9 00002378            838      lea instruction_str,a1 ; a1 address of disassember code
+00001A7A                           839  disassemblerDone
+00001A7A  4CDF 0C7F                840      movem.l (a7)+,disassemblerRegs 
+00001A7E  4E75                     841      rts
+00001A80                           842  disassemblerReturn0
+00001A80  91C8                     843      suba.l a0,a0 ; a0 = 0
+00001A82  93C9                     844      suba.l a1,a1 ; a1 = 0
+00001A84  4EF8 1A7A                845      jmp disassemblerDone
+00001A88                           846  disassemblerError
+00001A88  4286                     847      clr.l d6 ; d6 = 0 so we skip instruction we don't need the instruction length 
+00001A8A  4EF8 19EE                848      jmp disassemblerData
+00001A8A  4EF8 19EE                849  -------------------- end include --------------------
+00001A8E                           850      INCLUDE 'opcode_subroutine.x68'
+00001A8E                           851      ; This subrountine appends 'A' to instruction_str
+00001A8E                           852      ; argument 
+00001A8E                           853      ; d0 = 3 bit 
+00001A8E                           854      ; none
+00001A8E                           855      ; return none
+00001A8E                           856  WriteDataReg Reg d0/a0-a1
+00001A8E                           857  WriteData
+00001A8E  48E7 80C0                858      movem.l WriteDataReg,-(sp)
+00001A92  0280 00000007            859      andi.l #7,d0
+00001A98  6600 0004                860      bne WriteDataU
+00001A9C  5080                     861      addi.l #8,d0 ; update value of d0
+00001A9E                           862  WriteDataU
+00001A9E                           863      ; append '#'
+00001A9E  41F9 00002378            864      lea instruction_str,a0
+00001AA4  43F9 000024C1            865      lea octothorpe,a1 
+00001AAA  4EB9 000022D4            866      jsr strcat
+00001AB0                           867      
+00001AB0  0680 00000030            868      addi.l #$30,d0 ; convert to digit
+00001AB6  13C0 00002376            869      move.b d0,(digit)
+00001ABC                           870      ; append immediate.
+00001ABC  41F9 00002378            871      lea instruction_str,a0
+00001AC2  43F9 00002376            872      lea digit,a1 
+00001AC8  4EB9 000022D4            873      jsr strcat
+00001ACE  4CDF 0301                874      movem.l (sp)+,WriteDataReg
+00001AD2  4E75                     875      rts
+00001AD4                           876  
+00001AD4                           877      ; this subrountine appends 'A' to instruction_str
+00001AD4                           878      ; argument 
+00001AD4                           879      ; none
+00001AD4                           880      ; return none
+00001AD4                           881  AppendA
+00001AD4  48E7 00C0                882      movem.l a0-a1,-(sp)
+00001AD8                           883      ; append 'A'
+00001AD8  41F9 00002378            884      lea instruction_str,a0
+00001ADE  43F9 000024B1            885      lea aChar,a1 
+00001AE4  4EB9 000022D4            886      jsr strcat
+00001AEA  4CDF 0300                887      movem.l (sp)+,a0-a1
+00001AEE  4E75                     888      rts
+00001AF0                           889      ; this subrountine appends 'B' or 'W' or 'L' to instruction_str
+00001AF0                           890      ; argument 
+00001AF0                           891      ; d0 ( 0 byte 1 word 2 long )
+00001AF0                           892      ; return none
+00001AF0                           893  OpcodeSize
+00001AF0  48E7 00C0                894      movem.l a0-a1,-(sp)
+00001AF4                           895      ; append '.'
+00001AF4  41F9 00002378            896      lea instruction_str,a0
+00001AFA  43F9 000024BF            897      lea dot,a1 
+00001B00  4EB9 000022D4            898      jsr strcat
+00001B06  0C00 0000                899      cmpi.b #0,d0
+00001B0A  6700 0018                900      beq OpcodeSizeB
+00001B0E  0C00 0001                901      cmpi.b #1,d0
+00001B12  6700 0028                902      beq OpcodeSizeW
+00001B16  0C00 0002                903      cmpi.b #2,d0
+00001B1A  6700 0038                904      beq OpcodeSizeL
+00001B1E  4EF9 00001B66            905      jmp OpcodeSizeDone
+00001B24                           906  OpcodeSizeB
+00001B24                           907      ; append 'B'
+00001B24  41F9 00002378            908      lea instruction_str,a0
+00001B2A  43F9 000024A7            909      lea bChar,a1 
+00001B30  4EB9 000022D4            910      jsr strcat
+00001B36  4EF9 00001B66            911      jmp OpcodeSizeDone
+00001B3C                           912  OpcodeSizeW
+00001B3C                           913      ; append 'W'
+00001B3C  41F9 00002378            914      lea instruction_str,a0
+00001B42  43F9 000024A9            915      lea wChar,a1 
+00001B48  4EB9 000022D4            916      jsr strcat
+00001B4E  4EF9 00001B66            917      jmp OpcodeSizeDone
+00001B54                           918  OpcodeSizeL
+00001B54                           919      ; append 'L'
+00001B54  41F9 00002378            920      lea instruction_str,a0
+00001B5A  43F9 000024AB            921      lea lChar,a1 
+00001B60  4EB9 000022D4            922      jsr strcat
+00001B66                           923  OpcodeSizeDone
+00001B66                           924      ; append ' '
+00001B66  41F9 00002378            925      lea instruction_str,a0
+00001B6C  43F9 000024AD            926      lea Space,a1 
+00001B72  4EB9 000022D4            927      jsr strcat
+00001B78  4CDF 0300                928      movem.l (sp)+,a0-a1
+00001B7C  4E75                     929      rts
+00001B7C  4E75                     930  -------------------- end include --------------------
+00001B7E                           931      INCLUDE 'ea_subroutine.x68'
+00001B7E                           932     * this subroutine appends size (b w l) and  effective address to instruction_str ( this is used for add sub or sub )
+00001B7E                           933      ; argument 
+00001B7E                           934      ; d0 = register1 (3 bit) opmode (3 bit) mode (3 bit) register2 (3 bit)
+00001B7E                           935      ; d1 = mask1 for source ( this lets us know which mode that we can implement )
+00001B7E                           936      ; d2 = mask2 for destination ( this lets us know which mode that we can implement )
+00001B7E                           937      ; d3 = 4 bytes for (xxx).L or 2 byte for (xxx).W or #DATA for source
+00001B7E                           938      ; d4 = 4 bytes for (xxx).L or 2 byte for (xxx).W or #DATA for destination
+00001B7E                           939      ; return 
+00001B7E                           940      ; d0 = 1 ( this means effective address added to instruction_str ) d0 = 0 ( this means effective address was not added to instruction_str )
+00001B7E                           941      ; d1 = offset that we need to update ( for Dn An (An) (An)+ -(An) -(An) 2 for (xxx).W 4 for (xxx).L )
+00001B7E                           942  disassemblerG4FunRegs reg d2-d6/a0-a1
+00001B7E                           943  disassemblerG4Fun
+00001B7E  48E7 3EC0                944      movem.l disassemblerG4FunRegs ,-(sp)
+00001B82                           945      ; d5 = opmode
+00001B82  2C00                     946      move.l d0,d6 ; save d0 in d6
+00001B84  EC88                     947      lsr.l #6,d0
+00001B86  0280 00000007            948      andi.l #7,d0
+00001B8C  0C00 0003                949      cmpi.b #3,d0
+00001B90  6D00 0020                950      blt disassemblerG4FunSize
+00001B94  6700 0012                951      beq disassemblerG4FunAnW
+00001B98  0C00 0007                952      cmpi.b #7,d0
+00001B9C  6700 0012                953      beq disassemblerG4FunAnL
+00001BA0  5980                     954      subi.l #4,d0
+00001BA2  4EF9 00001BB2            955      jmp disassemblerG4FunSize
+00001BA8                           956  disassemblerG4FunAnw
+00001BA8  7001                     957      move.l #1,d0
+00001BAA  4EF9 00001BB2            958      jmp disassemblerG4FunSize
+00001BB0                           959  disassemblerG4FunAnL
+00001BB0  7002                     960      move.l #2,d0
+00001BB2                           961  disassemblerG4FunSize
+00001BB2  4EB8 1AF0                962      jsr OpcodeSize
+00001BB6  2A00                     963      move.l d0,d5
+00001BB8  2006                     964      move.l d6,d0
+00001BBA  4EB9 00001BCE            965      jsr disassemblerG2Fun
+00001BC0                           966  disassemblerG4FunDone
+00001BC0  4CDF 037C                967      movem.l (sp)+,disassemblerG4FunRegs 
+00001BC4  4E75                     968      rts
+00001BC6                           969  disassemblerG4FunReturn0
+00001BC6  4280                     970      clr.l d0
+00001BC8  4281                     971      clr.l d1
+00001BCA  4EF8 1BC0                972      jmp disassemblerG4FunDone
+00001BCE                           973  
+00001BCE                           974      * this subroutine appends the effective address to instruction_str ( this is used for add sub or sub lea )
+00001BCE                           975      ; argument 
+00001BCE                           976      ; d0 = register1 (3 bit) opmode (3 bit) mode (3 bit) register2 (3 bit)
+00001BCE                           977      ; d1 = mask1 for source ( this lets us know which mode that can be implemented)
+00001BCE                           978      ; d2 = mask2 for destination ( this lets us know which mode that can be implemented)
+00001BCE                           979      ; d3 = 4 bytes for (xxx).L or 2 byte for (xxx).W or #DATA for source
+00001BCE                           980      ; d4 = 4 bytes for (xxx).L or 2 byte for (xxx).W or #DATA for destination
+00001BCE                           981      ; return 
+00001BCE                           982      ; d0 = 1 ( this means effective address added to instruction_str ) d0 = 0 ( this mean effective address was not added to instruction_str )
+00001BCE                           983      ; d1 = offset that we need to update ( for Dn An (An) (An)+ -(An) -(An) 2 for (xxx).W 4 for (xxx).L )
+00001BCE                           984  disassemblerG2FunRegs reg d2-d7/a0-a1
+00001BCE                           985  disassemblerG2Fun
+00001BCE  48E7 3FC0                986      movem.l disassemblerG2FunRegs ,-(sp)
+00001BD2  2A00                     987      move.l d0,d5
+00001BD4  EC8D                     988      lsr.l #6,d5
+00001BD6  0285 00000007            989      andi.l #7,d5 ; d5 = opcode
+00001BDC  0C05 0003                990      cmpi.b #3,d5
+00001BE0  6D00 0012                991      blt disassemblerG2Fun_ea_Dn_Dn
+00001BE4  6700 0058                992      beq disassemblerG2AnW
+00001BE8  0C05 0007                993      cmpi.b #7,d5
+00001BEC  6D00 0018                994      blt disassemblerG2Fun_Dn_ea_Dn
+00001BF0  6700 0054                995      beq disassemblerG2AnL
+00001BF4                           996  disassemblerG2Fun_ea_Dn_Dn
+00001BF4                           997      ; here opmode = 0 or 1 or 2
+00001BF4                           998      ; update d0
+00001BF4  0280 00000E3F            999      andi.l #$E3F,d0 ; clear bit (bit 8 bit 7 bit 6 ) Opmode = 000 ( 000 is the mode of Dn) 
+00001BFA                          1000      ; we don't need to use #DATA here because destination is Dn
+00001BFA  4EB9 00001C60           1001      jsr disassemblerG3Fun
+00001C00  4EF9 00001C5A           1002      jmp disassemblerG2FunDone
+00001C06                          1003  disassemblerG2Fun_Dn_ea_Dn
+00001C06                          1004      ; here opmode = 4 or 5 or 6
+00001C06  5985                    1005      subi.l #4,d5 ; convert to size 
+00001C08                          1006      ; swap d3 and d4
+00001C08  2C03                    1007      move.l d3,d6
+00001C0A  2604                    1008      move.l d4,d3
+00001C0C  2806                    1009      move.l d6,d4
+00001C0E                          1010      ; update d0
+00001C0E  2C00                    1011      move.l d0,d6
+00001C10  0286 00000007           1012      andi.l #7,d6
+00001C16  E18E                    1013      lsl.l #8,d6
+00001C18  E38E                    1014      lsl.l #1,d6
+00001C1A  2E00                    1015      move.l d0,d7
+00001C1C  E08F                    1016      lsr.l #8,d7
+00001C1E  E28F                    1017      lsr.l #1,d7
+00001C20  0287 00000007           1018      andi.l #7,d7
+00001C26  0280 00000038           1019      andi.l #$38,d0
+00001C2C  E788                    1020      lsl.l #3,d0
+00001C2E  8086                    1021      or.l d6,d0
+00001C30  8087                    1022      or.l d7,d0
+00001C32  4EB9 00001C60           1023      jsr disassemblerG3Fun
+00001C38  4EF9 00001C5A           1024      jmp disassemblerG2FunDone
+00001C3E                          1025  disassemblerG2AnW
+00001C3E  7A01                    1026      move.l #1,d5
+00001C40  4EF9 00001C48           1027      jmp disassemblerG2AnU
+00001C46                          1028  disassemblerG2AnL
+00001C46  7A02                    1029      move.l #2,d5
+00001C48                          1030  disassemblerG2AnU
+00001C48                          1031      ; update d0
+00001C48  0280 00000E3F           1032      andi.l #$E3F,d0 ; clear bit (bit 8 bit 7 bit 6 )
+00001C4E  0080 00000040           1033      ori.l #$40,d0 ; set bit 6  here opmode = 001  this is mode of An 
+00001C54  4EB9 00001C60           1034      jsr disassemblerG3Fun
+00001C5A                          1035  disassemblerG2FunDone
+00001C5A  4CDF 03FC               1036      movem.l (sp)+,disassemblerG2FunRegs 
+00001C5E  4E75                    1037      rts
+00001C60                          1038  
+00001C60                          1039  
+00001C60                          1040      * this subroutine appends effective address to instruction_str (this is used for add sub or sub lea after convert formula and for move directly)
+00001C60                          1041      ; argument 
+00001C60                          1042      ; d0 = destination 6 bit{ Register 3 bit Mode 3 bit} source 6 bit{ Mode  3 bit register 3 bit}
+00001C60                          1043      ; d1 = mask1 for source ( this lets us know which mode that can be implemented)
+00001C60                          1044      ; d2 = mask2 for destination ( this lets us know which mode that can be implemented)
+00001C60                          1045      ; d3 = 4 bytes for (xxx).L or 2 byte for (xxx).W or #DATA for source 
+00001C60                          1046      ; d4 = 4 bytes for (xxx).L or 2 byte for (xxx).W or #DATA for destination 
+00001C60                          1047      ; d5 = size ( 0 byte 1 word 2 long )
+00001C60                          1048      ; return 
+00001C60                          1049      ; d0 = 1 ( this means effective address added to instruction_str ) d0 = 0 ( this mean effective address was not added to instruction_str )
+00001C60                          1050      ; d1 = offset that we need to update ( for Dn An (An) (An)+ -(An) -(An) 2 for (xxx).W 4 for (xxx).L )*
+00001C60  =00000000               1051  disassemblerG3FunArg3 equ 0
+00001C60  =00000004               1052  disassemblerG3FunArg4 equ 4
+00001C60  =00000008               1053  disassemblerG3FunArg5 equ 8
+00001C60                          1054  disassemblerG3FunRegs reg d2-d5/a0-a1
+00001C60                          1055  disassemblerG3Fun
+00001C60  48E7 3CC0               1056      movem.l disassemblerG3FunRegs ,-(sp)
+00001C64  2600                    1057      move.l d0,d3
+00001C66  E68B                    1058      lsr.l #3,d3
+00001C68  0283 00000007           1059      andi.l #7,d3 ; d3 = mode source 
+00001C6E  2800                    1060      move.l d0,d4
+00001C70  EC8C                    1061      lsr.l #6,d4
+00001C72  0284 00000007           1062      andi.l #7,d4 ; d4 = mode destination
+00001C78  B63C 0001               1063      cmp.b #1,d3
+00001C7C  6700 000A               1064      beq disassemblerG3FunAn
+00001C80  B83C 0001               1065      cmp.b #1,d4
+00001C84  6600 000A               1066      bne disassemblerG3FunAnDone
+00001C88                          1067  disassemblerG3FunAn
+00001C88  BA3C 0000               1068      cmp.b #0,d5
+00001C8C  6700 0080               1069      beq disassemblerG3FunReturn0 ; when source or destination is An and size is byte this is an error 
+00001C90                          1070      ; here mode source = 1 and mode destination = 1 and size ! 0 (byte)
+00001C90                          1071  disassemblerG3FunAnDone
+00001C90                          1072      ; we do source first 
+00001C90  2800                    1073      move.l d0,d4 ; save d0 in d4
+00001C92  0280 0000003F           1074      andi.l #$3f,d0 ; keep source 
+00001C98  242F 0004               1075      move.l disassemblerG3FunArg4(sp),d2
+00001C9C  2605                    1076      move.l d5,d3 ; d3 = size 
+00001C9E  4EB9 00001D16           1077      jsr effectiveAddress
+00001CA4  0C80 00000000           1078      cmpi.l #0,d0
+00001CAA  6700 0062               1079      beq disassemblerG3FunReturn0
+00001CAE  2601                    1080      move.l d1,d3 ; for return
+00001CB0                          1081      
+00001CB0                          1082      ; append ','
+00001CB0  41F9 00002378           1083      lea instruction_str,a0
+00001CB6  43F9 000024BD           1084      lea comma,a1 
+00001CBC  4EB9 000022D4           1085      jsr strcat
+00001CC2                          1086      
+00001CC2                          1087      ; destination must be not #DATA
+00001CC2  2A04                    1088      move.l d4,d5
+00001CC4  EC8D                    1089      lsr.l #6,d5
+00001CC6  0285 00000007           1090      andi.l #7,d5 ; d5 mode of destination 
+00001CCC  2004                    1091      move.l d4,d0
+00001CCE  E088                    1092      lsr.l #8,d0
+00001CD0  E288                    1093      lsr.l #1,d0
+00001CD2  0280 00000007           1094      andi.l #7,d0 ; d0 register of destination 
+00001CD8  0C05 0007               1095      cmpi.b #7,d5
+00001CDC  6600 000A               1096      bne disassemblerG3FunDU
+00001CE0  0C00 0004               1097      cmpi.b #4,d0
+00001CE4  6700 0028               1098      beq disassemblerG3FunReturn0 ; destination must be not #DATA
+00001CE8                          1099  disassemblerG3FunDU
+00001CE8                          1100      ; we do destination 
+00001CE8  E78D                    1101      lsl.l #3,d5
+00001CEA  8085                    1102      or.l d5,d0 ; d0 destination 
+00001CEC  222F 0000               1103      move.l disassemblerG3FunArg3(sp),d1 ; d1 = mask2 of destination 
+00001CF0  242F 0008               1104      move.l disassemblerG3FunArg5(sp),d2 ; d1 = 4 bytes for destination 
+00001CF4                          1105      ; we don't need to use d3 no #DATA here 
+00001CF4  4EB9 00001D16           1106      jsr effectiveAddress
+00001CFA  0C80 00000000           1107      cmpi.l #0,d0
+00001D00  6700 000C               1108      beq disassemblerG3FunReturn0
+00001D04  D283                    1109      add.l d3,d1
+00001D06                          1110  disassemblerG3FunReturn1
+00001D06  7001                    1111      move.l #1,d0
+00001D08                          1112  disassemblerG3FunDone
+00001D08  4CDF 033C               1113      movem.l (sp)+,disassemblerG3FunRegs 
+00001D0C  4E75                    1114      rts
+00001D0E                          1115  disassemblerG3FunReturn0
+00001D0E  4280                    1116      clr.l d0
+00001D10  4281                    1117      clr.l d1
+00001D12  4EF8 1D08               1118      jmp disassemblerG3FunDone
+00001D16                          1119  
+00001D16                          1120  
+00001D16                          1121  
+00001D16                          1122      
+00001D16                          1123      * this subroutine appends effective address to instruction_str
+00001D16                          1124      ; argument 
+00001D16                          1125      ; d0 = mode (3 bit) register (3 bit)
+00001D16                          1126      ; d1 = mask ( this let us know which mode that can implement )
+00001D16                          1127      ; d1 = ( bit 0  if set Dn implement if clear was not implemented ) 
+00001D16                          1128      ;      ( bit 1  if set An implement if clear was not implemented )
+00001D16                          1129      ;      ( bit 2  if set (An) implement if clear was not implemented )
+00001D16                          1130      ;      ( bit 3  if set (An)+ implement if clear was not implemented )
+00001D16                          1131      ;      ( bit 4  if set -(An) implement if clear was not implemented )
+00001D16                          1132      ;      ( bit 5  if set (xxx).W implement if clear was not implemented )
+00001D16                          1133      ;      ( bit 6  if set (xxx).L implement if clear was not implemented )
+00001D16                          1134      ;      ( bit 7  if set #<data> implement if clear was not implemented )
+00001D16                          1135      ; d2 = 4 bytes for (xxx).L or 2 byte for (xxx).W or #DATA
+00001D16                          1136      ; d3 = size ( 0 byte 1 word 2 long )
+00001D16                          1137      ; return 
+00001D16                          1138      ; d0 = 1 ( this means effective address added to instruction_str ) d0 = 0 ( this means effective address was not added to instruction_str )
+00001D16                          1139      ; d1 = offset that we need to update ( for Dn An (An) (An)+ -(An) -(An) 2 for (xxx).W 4 for (xxx).L )
+00001D16                          1140  effectiveAddressRegs reg d2-d5/a0-a1
+00001D16                          1141  effectiveAddress
+00001D16  48E7 3CC0               1142      movem.l effectiveAddressRegs ,-(sp)
+00001D1A  2A03                    1143      move.l d3,d5 ; d5 = size 
+00001D1C  2601                    1144      move.l d1,d3 ; d3 = mask
+00001D1E  2800                    1145      move.l d0,d4
+00001D20  0284 00000007           1146      andi.l #7,d4 ; d4 = register
+00001D26  E688                    1147      lsr.l #3,d0
+00001D28  0280 00000007           1148      andi.l #7,d0 ; d0 = mode
+00001D2E  4281                    1149      clr.l d1 ; the default value of d1 is zero 
+00001D30  B03C 0000               1150      cmp.b #0,d0
+00001D34  6700 0030               1151      beq effectiveAddressDD  ; Register Direct Data
+00001D38  B03C 0001               1152      cmp.b #1,d0
+00001D3C  6700 004A               1153      beq effectiveAddressDA ; Register Direct Address
+00001D40  B03C 0002               1154      cmp.b #2,d0
+00001D44  6700 0080               1155      beq effectiveAddressIA ; Register Indirect Address
+00001D48  B03C 0003               1156      cmp.b #3,d0
+00001D4C  6700 009A               1157      beq effectiveAddressIAPos  ; Register Indirect Address with Postincrement
+00001D50  B03C 0004               1158      cmp.b #4,d0
+00001D54  6700 00E2               1159      beq effectiveAddressIAPre ; Register Indirect Address with Predecrement
+00001D58  B03C 0007               1160      cmp.b #7,d0
+00001D5C  6700 012A               1161      beq effectiveAddress7  ; here Absolute Data Addressing Short or Absolute Data Addressing Long or Immediate
+00001D60  4EF9 00001F92           1162      jmp effectiveAddressReturn0
+00001D66                          1163  effectiveAddressDD ; Register Direct Data 
+00001D66  0283 00000001           1164      andi.l #1,d3 ; bit 0
+00001D6C  6700 0224               1165      beq effectiveAddressReturn0 
+00001D70                          1166      ; append 'D'
+00001D70  41F9 00002378           1167      lea instruction_str,a0
+00001D76  43F9 000024AF           1168      lea dChar,a1 
+00001D7C  4EB9 000022D4           1169      jsr strcat
+00001D82  4EF9 00001DA4           1170      jmp effectiveAddressDDA
+00001D88                          1171  effectiveAddressDA ; Register Direct Address
+00001D88  0283 00000002           1172      andi.l #2,d3 ; bit 1
+00001D8E  6700 0202               1173      beq effectiveAddressReturn0
+00001D92                          1174      ; append 'A'
+00001D92  41F9 00002378           1175      lea instruction_str,a0
+00001D98  43F9 000024B1           1176      lea aChar,a1 
+00001D9E  4EB9 000022D4           1177      jsr strcat
+00001DA4                          1178  effectiveAddressDDA ; here Data or Address register
+00001DA4                          1179      ; append register 
+00001DA4  0604 0030               1180      addi.b #$30,d4 ; convert to digit
+00001DA8  13C4 00002376           1181      move.b d4,(digit)
+00001DAE  41F9 00002378           1182      lea instruction_str,a0
+00001DB4  43F9 00002376           1183      lea digit,a1 
+00001DBA  4EB9 000022D4           1184      jsr strcat
+00001DC0  4EF9 00001F8A           1185      jmp effectiveAddressReturn1
+00001DC6                          1186  effectiveAddressIA ; Register Indirect Address
+00001DC6  0283 00000004           1187      andi.l #4,d3 ; bit 2
+00001DCC  6700 01C4               1188      beq effectiveAddressReturn0
+00001DD0                          1189      ; append '(A'
+00001DD0  41F9 00002378           1190      lea instruction_str,a0
+00001DD6  43F9 000024D9           1191      lea BracketOpen1,a1 
+00001DDC  4EB9 000022D4           1192      jsr strcat
+00001DE2  4EF9 00001E54           1193      jmp effectiveAddressIAPreIA 
+00001DE8                          1194  effectiveAddressIAPos ; Register Indirect Address with Postincrement
+00001DE8  0283 00000008           1195      andi.l #8,d3 ; bit 3
+00001DEE  6700 01A2               1196      beq effectiveAddressReturn0
+00001DF2                          1197      ; append '(A'
+00001DF2  41F9 00002378           1198      lea instruction_str,a0
+00001DF8  43F9 000024D9           1199      lea BracketOpen1,a1 
+00001DFE  4EB9 000022D4           1200      jsr strcat
+00001E04                          1201      ; append register 
+00001E04  0604 0030               1202      addi.b #$30,d4 ; convert to digit
+00001E08  13C4 00002376           1203      move.b d4,(digit)
+00001E0E  41F9 00002378           1204      lea instruction_str,a0
+00001E14  43F9 00002376           1205      lea digit,a1 
+00001E1A  4EB9 000022D4           1206      jsr strcat
+00001E20                          1207      ; append ')+'
+00001E20  41F9 00002378           1208      lea instruction_str,a0
+00001E26  43F9 000024D6           1209      lea BracketClose1,a1 
+00001E2C  4EB9 000022D4           1210      jsr strcat
+00001E32  4EF9 00001F8A           1211      jmp effectiveAddressReturn1
+00001E38                          1212  effectiveAddressIAPre ; Register Indirect Address with Predecrement
+00001E38  0283 00000010           1213      andi.l #$10,d3 ; bit 4
+00001E3E  6700 0152               1214      beq effectiveAddressReturn0
+00001E42                          1215      ; append '-(A'
+00001E42  41F9 00002378           1216      lea instruction_str,a0
+00001E48  43F9 000024DC           1217      lea BracketOpen2,a1 
+00001E4E  4EB9 000022D4           1218      jsr strcat
+00001E54                          1219  effectiveAddressIAPreIA ; here Register Indirect Address with Predecrement or Register Indirect Address
+00001E54                          1220      ; append register 
+00001E54  0604 0030               1221      addi.b #$30,d4 ; convert to digit
+00001E58  13C4 00002376           1222      move.b d4,(digit)
+00001E5E  41F9 00002378           1223      lea instruction_str,a0
+00001E64  43F9 00002376           1224      lea digit,a1 
+00001E6A  4EB9 000022D4           1225      jsr strcat
+00001E70                          1226      ; append ')'
+00001E70  41F9 00002378           1227      lea instruction_str,a0
+00001E76  43F9 000024D4           1228      lea BracketClose,a1 
+00001E7C  4EB9 000022D4           1229      jsr strcat
+00001E82  4EF9 00001F8A           1230      jmp effectiveAddressReturn1
+00001E88                          1231  effectiveAddress7 ; here Absolute Data Addressing Short or Absolute Data Addressing Long or Immediate 
+00001E88  0C04 0000               1232      cmpi.b #0,d4
+00001E8C  6700 0018               1233      beq effectiveAddressADASL
+00001E90  0C04 0001               1234      cmpi.b #1,d4
+00001E94  6700 0010               1235      beq effectiveAddressADASL
+00001E98  0C04 0004               1236      cmpi.b #4,d4
+00001E9C  6700 0074               1237      beq effectiveAddressI 
+00001EA0  4EF9 00001F92           1238      jmp effectiveAddressReturn0
+00001EA6                          1239  effectiveAddressADASL
+00001EA6                          1240      ; append '$'
+00001EA6  41F9 00002378           1241      lea instruction_str,a0
+00001EAC  43F9 000024BB           1242      lea sDolar,a1 
+00001EB2  4EB9 000022D4           1243      jsr strcat
+00001EB8  0C04 0001               1244      cmpi.b #1,d4
+00001EBC  6700 0018               1245      beq effectiveAddressADAL
+00001EC0                          1246  effectiveAddressADAS ; Absolute Data Addressing Short 
+00001EC0  0283 00000020           1247      andi.l #$20,d3 ; bit 5
+00001EC6  6700 00CA               1248      beq effectiveAddressReturn0
+00001ECA  E08A                    1249      lsr.l #8,d2 
+00001ECC  E08A                    1250      lsr.l #8,d2 ; we need just 2 byte
+00001ECE  5481                    1251      addi.l #2,d1
+00001ED0  4EF9 00001EE2           1252      jmp effectiveAddressADASLDone
+00001ED6                          1253  effectiveAddressADAL ; Absolute Data Addressing Long
+00001ED6  0283 00000040           1254      andi.l #$40,d3 ; bit 6
+00001EDC  6700 00B4               1255      beq effectiveAddressReturn0
+00001EE0  5881                    1256      addi.l #4,d1
+00001EE2                          1257  effectiveAddressADASLDone
+00001EE2  2601                    1258      move.l d1,d3
+00001EE4  2002                    1259      move.l d2,d0
+00001EE6  43F9 000023DC           1260      lea data_str,a1
+00001EEC  2401                    1261      move.l d1,d2 
+00001EEE  E38A                    1262      lsl.l #1,d2 ; for write 4 or 8 digit at max
+00001EF0  7201                    1263      move.l #1,d1 ; d1 = 1 for padding zeros
+00001EF2  4EB9 000022FC           1264      jsr Hex2Str
+00001EF8  2203                    1265      move.l d3,d1
+00001EFA                          1266      ; append data to instruction_str
+00001EFA  41F9 00002378           1267      lea instruction_str,a0
+00001F00  43F9 000023DC           1268      lea data_str,a1 
+00001F06  4EB9 000022D4           1269      jsr strcat
+00001F0C  4EF9 00001F8A           1270      jmp effectiveAddressReturn1
+00001F12                          1271  effectiveAddressI ; Immediate 
+00001F12  0283 00000080           1272      andi.l #$80,d3 ; bit 7
+00001F18  6700 0078               1273      beq effectiveAddressReturn0
+00001F1C                          1274      ; append '#$'
+00001F1C  41F9 00002378           1275      lea instruction_str,a0
+00001F22  43F9 000024C3           1276      lea octothorpe1,a1 
+00001F28  4EB9 000022D4           1277      jsr strcat
+00001F2E  7604                    1278      move.l #4,d3
+00001F30  7808                    1279      move.l #8,d4
+00001F32  0C05 0000               1280      cmpi.b #0,d5
+00001F36  6700 0012               1281      beq effectiveAddressIB
+00001F3A  0C05 0002               1282      cmpi.b #2,d5
+00001F3E  6700 0022               1283      beq effectiveAddressIU
+00001F42                          1284      ; here word 
+00001F42  7804                    1285      move.l #4,d4
+00001F44  4EF9 00001F5C           1286      jmp effectiveAddressIBU
+00001F4A                          1287  effectiveAddressIB
+00001F4A                          1288      ; here byte
+00001F4A  7802                    1289      move.l #2,d4
+00001F4C  2002                    1290      move.l d2,d0
+00001F4E  E088                    1291      lsr.l #8,d0
+00001F50  E088                    1292      lsr.l #8,d0
+00001F52  0280 0000FF00           1293      andi.l #$ff00,d0
+00001F58  6600 0038               1294      bne effectiveAddressReturn0
+00001F5C                          1295  effectiveAddressIBU
+00001F5C  E08A                    1296      lsr.l #8,d2 
+00001F5E  E08A                    1297      lsr.l #8,d2 ; we need just 2 byte for byte and word case
+00001F60  5583                    1298      subi.l #2,d3
+00001F62                          1299  effectiveAddressIU
+00001F62  2002                    1300      move.l d2,d0
+00001F64  43F9 000023DC           1301      lea data_str,a1
+00001F6A  7200                    1302      move.l #0,d1 ; d1 = 0 for non padding zeros
+00001F6C  2404                    1303      move.l d4,d2 ; for write  8 or 4 or 2 digit at max
+00001F6E  4EB9 000022FC           1304      jsr Hex2Str
+00001F74  4281                    1305      clr.l d1
+00001F76                          1306      ; append data to instruction_str
+00001F76  41F9 00002378           1307      lea instruction_str,a0
+00001F7C  43F9 000023DC           1308      lea data_str,a1 
+00001F82  4EB9 000022D4           1309      jsr strcat
+00001F88  D283                    1310      add.l d3,d1
+00001F8A                          1311  effectiveAddressReturn1    
+00001F8A  7001                    1312      move.l #1,d0
+00001F8C                          1313  effectiveAddressDone
+00001F8C  4CDF 033C               1314      movem.l (sp)+,effectiveAddressRegs 
+00001F90  4E75                    1315      rts
+00001F92                          1316  effectiveAddressReturn0
+00001F92  4280                    1317      clr.l d0
+00001F94  4281                    1318      clr.l d1
+00001F96  4EF8 1F8C               1319      jmp effectiveAddressDone
+00001F9A                          1320  
+00001F9A                          1321  
+00001F9A                          1322  
+00001F9A                          1323  
+00001F9A                          1324      * this subroutine append  DISPLACEMENT + address + 2 to instruction_str we use this for Bcc instruction
+00001F9A                          1325      ; argument 
+00001F9A                          1326      ; d0 = DISPLACEMENT 
+00001F9A                          1327      ; d1 = address 
+00001F9A                          1328      ; d2 = next 4 byte 
+00001F9A                          1329      ; return 
+00001F9A                          1330      ; d0 = 1 ( this means address added to instruction_str ) d0 = 0 ( this mean address was not added to instruction_str )
+00001F9A                          1331      ; d1 = offset that we need to update
+00001F9A                          1332  BriefExtensionWordFormatRegs reg d2-d3/a0-a1
+00001F9A                          1333  BriefExtensionWordFormat
+00001F9A  48E7 30C0               1334      movem.l BriefExtensionWordFormatRegs,-(sp)
+00001F9E  4283                    1335      clr.l d3 ; d3 = 0 we use it for offset 
+00001FA0                          1336      ; append '$'
+00001FA0  41F9 00002378           1337      lea instruction_str,a0
+00001FA6  43F9 000024BB           1338      lea sDolar,a1 
+00001FAC  4EB9 000022D4           1339      jsr strcat
+00001FB2  0C80 00000000           1340      cmpi.l #0,d0
+00001FB8  6700 0016               1341      beq BriefExtensionWordFormat16
+00001FBC  0C80 000000FF           1342      cmpi.l #$ff,d0
+00001FC2  6700 001C               1343      beq BriefExtensionWordFormat32
+00001FC6                          1344      ; here we convert signed extend DISPLACEMENT 8 bit to 32 bit
+00001FC6  4880                    1345      ext.w d0
+00001FC8  48C0                    1346      ext.l d0
+00001FCA  4EF9 00001FE4           1347      jmp BriefExtensionWordFormatUpdate
+00001FD0                          1348  BriefExtensionWordFormat16
+00001FD0  5483                    1349      addi.l #2,d3
+00001FD2  E08A                    1350      lsr.l #8,d2
+00001FD4  E08A                    1351      lsr.l #8,d2 ; we need just two bytes
+00001FD6  2002                    1352      move.l d2,d0
+00001FD8  48C0                    1353      ext.l d0 ; convert 16 bit to 32 bit using signed extend
+00001FDA  4EF9 00001FE4           1354      jmp BriefExtensionWordFormatUpdate
+00001FE0                          1355  BriefExtensionWordFormat32
+00001FE0  5883                    1356      addi.l #4,d3
+00001FE2  2002                    1357      move.l d2,d0
+00001FE4                          1358  BriefExtensionWordFormatUpdate
+00001FE4  D081                    1359      add.l d1,d0 ; add DISPLACEMENT to current address 
+00001FE6  5480                    1360      addi.l #2,d0 ; plus two
+00001FE8  43F9 000023DC           1361      lea data_str,a1
+00001FEE  7201                    1362      move.l #1,d1 ; d1 = 1 for padding zeros
+00001FF0  7408                    1363      move.l #8,d2 ; for write  8 digit at max
+00001FF2  4EB9 000022FC           1364      jsr Hex2Str
+00001FF8                          1365      ; append data to instruction_str
+00001FF8  41F9 00002378           1366      lea instruction_str,a0
+00001FFE  43F9 000023DC           1367      lea data_str,a1 
+00002004  4EB9 000022D4           1368      jsr strcat 
+0000200A  2203                    1369      move.l d3,d1
+0000200C                          1370  BriefExtensionWordFormatReturn1
+0000200C  7001                    1371      move.l #1,d0
+0000200E                          1372  BriefExtensionWordFormatDone
+0000200E  4CDF 030C               1373      movem.l (sp)+,BriefExtensionWordFormatRegs
+00002012  4E75                    1374      rts
+00002014                          1375  BriefExtensionWordFormatReturn0
+00002014  4280                    1376      clr.l d0
+00002016  4281                    1377      clr.l d1
+00002018  4EF8 200E               1378      jmp BriefExtensionWordFormatDone
+0000201C                          1379  
+0000201C                          1380  
+0000201C                          1381  
+0000201C                          1382  
+0000201C                          1383  
+0000201C                          1384      ; argument 
+0000201C                          1385      ; d0 = register mask as (B1 B0)
+0000201C                          1386      ; return
+0000201C                          1387      ; d0 = register mask as (B0 B1)
+0000201C                          1388  reverseBit2
+0000201C  48E7 6000               1389      movem.l d1-d2,-(sp)
+00002020  2200                    1390      move.l d0,d1
+00002022  0281 00000001           1391      andi.l #1,d1
+00002028  E389                    1392      lsl.l #1,d1
+0000202A  2400                    1393      move.l d0,d2
+0000202C  0282 00000002           1394      andi.l #2,d2
+00002032  E28A                    1395      lsr.l #1,d2
+00002034  8282                    1396      or.l d2,d1
+00002036  2001                    1397      move.l d1,d0
+00002038  4CDF 0006               1398      movem.l (sp)+,d1-d2
+0000203C  4E75                    1399      rts
+0000203E                          1400      ; argument 
+0000203E                          1401      ; d0 = register mask as (B3 B2 B1 B0)
+0000203E                          1402      ; return
+0000203E                          1403      ; d0 = register mask as (B0 B1 B2 B3)
+0000203E                          1404  reverseBit4
+0000203E  48E7 7000               1405      movem.l d1-d3,-(sp)
+00002042  2600                    1406      move.l d0,d3 ; save d0 in d3
+00002044  0280 00000003           1407      andi.l #$3,d0
+0000204A  4EB8 201C               1408      jsr reverseBit2
+0000204E  2200                    1409      move.l d0,d1
+00002050  E589                    1410      lsl.l #2,d1
+00002052  2003                    1411      move.l d3,d0
+00002054  E488                    1412      lsr.l #2,d0
+00002056  0280 00000003           1413      andi.l #$3,d0
+0000205C  4EB8 201C               1414      jsr reverseBit2
+00002060  8081                    1415      or.l d1,d0
+00002062  4CDF 000E               1416      movem.l (sp)+,d1-d3
+00002066  4E75                    1417      rts
+00002068                          1418      ; argument 
+00002068                          1419      ; d0 = register mask as (B7 B6 B5 B4 B3 B2 B1 B0)
+00002068                          1420      ; return
+00002068                          1421      ; d0 = register mask as (B0 B1 B2 B3 B4 B5 B6 B7)
+00002068                          1422  reverseBit8
+00002068  48E7 7000               1423      movem.l d1-d3,-(sp)
+0000206C  2600                    1424      move.l d0,d3 ; save d0 in d3
+0000206E  0280 0000000F           1425      andi.l #$f,d0
+00002074  4EB8 203E               1426      jsr reverseBit4
+00002078  2200                    1427      move.l d0,d1
+0000207A  E989                    1428      lsl.l #4,d1
+0000207C  2003                    1429      move.l d3,d0
+0000207E  E888                    1430      lsr.l #4,d0
+00002080  0280 0000000F           1431      andi.l #$f,d0
+00002086  4EB8 203E               1432      jsr reverseBit4
+0000208A  8081                    1433      or.l d1,d0
+0000208C  4CDF 000E               1434      movem.l (sp)+,d1-d3
+00002090  4E75                    1435      rts
+00002092                          1436      
+00002092                          1437      ; argument 
+00002092                          1438      ; d0 = register mask as (D0 D1 D2 D3 D4 D5 D6 D7 A0 A1 A2 A3 A4 A5 A6 A7)
+00002092                          1439      ; return
+00002092                          1440      ; d0 = register mask as (A7 A6 A5 A4 A3 A2 A1 A0 D7 D6 D5 D4 D3 D2 D1 D0)
+00002092                          1441  reverseBit16
+00002092  48E7 7000               1442      movem.l d1-d3,-(sp)
+00002096  2600                    1443      move.l d0,d3 ; save d0 in d3
+00002098  0280 000000FF           1444      andi.l #$ff,d0
+0000209E  4EB8 2068               1445      jsr reverseBit8
+000020A2  2200                    1446      move.l d0,d1
+000020A4  E189                    1447      lsl.l #8,d1
+000020A6  2003                    1448      move.l d3,d0
+000020A8  E088                    1449      lsr.l #8,d0
+000020AA  0280 000000FF           1450      andi.l #$ff,d0
+000020B0  4EB8 2068               1451      jsr reverseBit8
+000020B4  8081                    1452      or.l d1,d0
+000020B6  4CDF 000E               1453      movem.l (sp)+,d1-d3
+000020BA  4E75                    1454      rts
+000020BC                          1455      
+000020BC                          1456      ; write register list to instruction_str (this function used for movem)
+000020BC                          1457      ; d0 = register mask as (A7 A6 A5 A4 A3 A2 A1 A0 D7 D6 D5 D4 D3 D2 D1 D0) 
+000020BC                          1458      ; return none 
+000020BC                          1459  registerListReg Reg d0-d4/a0-a1
+000020BC                          1460  registerList
+000020BC  48E7 F8C0               1461      movem.l registerListReg,-(sp)
+000020C0                          1462      ; we swap bit of data regitsers with bit of address registers
+000020C0  2200                    1463      move.l d0,d1 ; d1 = mask
+000020C2  0281 000000FF           1464      andi.l #$ff,d1 ; keep first byte
+000020C8  E149                    1465      lsl.w #8,d1
+000020CA  E048                    1466      lsr.w #8,d0
+000020CC  8041                    1467      or.w d1,d0
+000020CE  4281                    1468      clr.l d1 ; we use d1 as i counter
+000020D0                          1469      ; we use d2 for get current 2 bits
+000020D0  4283                    1470      clr.l d3 ; we use d3 for put '/' (slashChar) or '-' (minusChar)  the default value of d3 = 0 (this mean no - minus)
+000020D2  0C80 00000000           1471      cmpi.l #0,d0
+000020D8  6700 0172               1472      beq registerListDone    
+000020DC                          1473  registerListLoop
+000020DC  E288                    1474      lsr.l #1,d0
+000020DE  6400 013C               1475      bcc registerListLoopUpdate
+000020E2                          1476      ; here  C-flag is 1.
+000020E2                          1477      ; d2 = current 2 bit
+000020E2  2400                    1478      move.l d0,d2
+000020E4  0282 00000003           1479      andi.l #3,d2 ; d2 = current 2 bit
+000020EA  0C83 00000001           1480      cmpi.l #1,d3
+000020F0  6600 0016               1481      bne registerListLoopDA
+000020F4                          1482      ; here d3 = 1
+000020F4  0C82 00000001           1483      cmpi.l #1,d2
+000020FA  6700 0120               1484      beq registerListLoopUpdate
+000020FE  0C82 00000003           1485      cmpi.l #3,d2
+00002104  6700 0116               1486      beq registerListLoopUpdate
+00002108                          1487      ; d2 = 0 or d2 = 2 
+00002108                          1488  registerListLoopDA
+00002108  0C81 00000008           1489      cmpi.l #8,d1
+0000210E  6C00 0016               1490      bge registerListLoopA 
+00002112                          1491      ; here Address register
+00002112                          1492      ; append 'A'
+00002112  43F9 000024B1           1493      lea aChar,a1 
+00002118  4EB9 000022D4           1494      jsr strcat
+0000211E  2801                    1495      move.l d1,d4
+00002120  4EF9 00002136           1496      jmp registerListLoopU
+00002126                          1497  registerListLoopA
+00002126                          1498      ; here Data register
+00002126                          1499      ; append 'D'
+00002126  43F9 000024AF           1500      lea dChar,a1 
+0000212C  4EB9 000022D4           1501      jsr strcat
+00002132  2801                    1502      move.l d1,d4
+00002134  5184                    1503      subi.l #8,d4
+00002136                          1504  registerListLoopU
+00002136  0C80 00000000           1505      cmpi.l #0,d0
+0000213C  6700 00F0               1506      beq registerListLoopDone
+00002140  0C83 00000001           1507      cmpi.l #1,d3
+00002146  6700 004A               1508      beq registerListLoopMinusCheck
+0000214A                          1509      ; here d3 = 0
+0000214A                          1510      ; append register
+0000214A  0684 00000030           1511      addi.l #$30,d4 ; convert to digit
+00002150  13C4 00002376           1512      move.b d4,(digit)
+00002156  43F9 00002376           1513      lea digit,a1 
+0000215C  4EB9 000022D4           1514      jsr strcat
+00002162  0C80 00000000           1515      cmpi.l #0,d0
+00002168  6700 00E2               1516      beq registerListDone
+0000216C  0C02 0000               1517      cmpi.b #0,d2
+00002170  6700 0098               1518      beq registerListLoopSlash
+00002174  0C82 00000002           1519      cmpi.l #2,d2
+0000217A  6700 008E               1520      beq registerListLoopSlash
+0000217E  0C82 00000001           1521      cmpi.l #1,d2
+00002184  6700 0062               1522      beq registerListLoopMinus
+00002188  0C82 00000003           1523      cmpi.l #3,d2
+0000218E  6700 0058               1524      beq registerListLoopMinus
+00002192                          1525  registerListLoopMinusCheck
+00002192  0C82 00000001           1526      cmpi.l #1,d2
+00002198  6700 0082               1527      beq registerListLoopUpdate
+0000219C  0C82 00000003           1528      cmpi.l #3,d2
+000021A2  6700 0078               1529      beq registerListLoopUpdate
+000021A6                          1530      ; d2 = 0 or d2 = 2
+000021A6  0684 00000030           1531      addi.l #$30,d4 ; convert to digit
+000021AC  13C4 00002376           1532      move.b d4,(digit)
+000021B2  41F9 00002378           1533      lea instruction_str,a0
+000021B8  43F9 00002376           1534      lea digit,a1 
+000021BE  4EB9 000022D4           1535      jsr strcat
+000021C4  4283                    1536      clr.l d3 ; d3 = 0
+000021C6  0C80 00000000           1537      cmpi.l #0,d0
+000021CC  6700 007E               1538      beq registerListDone
+000021D0                          1539      ; append '/'
+000021D0  41F9 00002378           1540      lea instruction_str,a0
+000021D6  43F9 000024CA           1541      lea slash,a1 
+000021DC  4EB9 000022D4           1542      jsr strcat
+000021E2  4EF9 0000221C           1543      jmp registerListLoopUpdate
+000021E8                          1544  registerListLoopMinus
+000021E8  0C01 0007               1545      cmpi.b #7,d1
+000021EC  6700 001C               1546      beq registerListLoopSlash
+000021F0                          1547      ; i != 7 
+000021F0                          1548      ; d2 = 1 d2 = 3
+000021F0                          1549      ; append '-'
+000021F0  41F9 00002378           1550      lea instruction_str,a0
+000021F6  43F9 000024C8           1551      lea minus,a1 
+000021FC  4EB9 000022D4           1552      jsr strcat
+00002202  7601                    1553      move.l #1,d3 ; d3 = 1
+00002204  4EF9 0000221C           1554      jmp registerListLoopUpdate
+0000220A                          1555  registerListLoopSlash
+0000220A                          1556      ; d2 = 0 or d2 = 2
+0000220A                          1557      ; append '/'
+0000220A  41F9 00002378           1558      lea instruction_str,a0
+00002210  43F9 000024CA           1559      lea slash,a1 
+00002216  4EB9 000022D4           1560      jsr strcat
+0000221C                          1561  registerListLoopUpdate
+0000221C  5281                    1562      addi.l #1,d1 ; i++
+0000221E  0C80 00000000           1563      cmpi.l #0,d0
+00002224  6600 FEB6               1564      bne registerListLoop
+00002228  4EF9 0000224C           1565      jmp registerListDone
+0000222E                          1566  registerListLoopDone
+0000222E                          1567      ; append register
+0000222E  41F9 00002378           1568      lea instruction_str,a0
+00002234  0684 00000030           1569      addi.l #$30,d4 ; convert to digit
+0000223A  13C4 00002376           1570      move.b d4,(digit)
+00002240  43F9 00002376           1571      lea digit,a1 
+00002246  4EB9 000022D4           1572      jsr strcat
+0000224C                          1573  registerListDone    
+0000224C  4CDF 031F               1574      movem.l (sp)+,registerListReg
+00002250  4E75                    1575      rts
+00002250  4E75                    1576  -------------------- end include --------------------
+00002252                          1577      INCLUDE 'io_subroutine.x68'
+00002252                          1578      * return hex readed 
+00002252                          1579      ; d0 = hex readed 
+00002252                          1580  readHex
+00002252  48E7 6000               1581      movem.l d1-d2,-(sp)
+00002256                          1582      * we use d2 to save result
+00002256  4282                    1583      clr.l d2 ; d2 = 0
+00002258                          1584  readHexLoop
+00002258                          1585      ; read char from user 
+00002258  303C 0005               1586      move #5,d0
+0000225C  4E4F                    1587      trap #15
+0000225E  0C81 00000030           1588      cmpi.l #$30,d1 * any char less '0' we end readHex
+00002264  6D00 0066               1589      blt readHexDone
+00002268  0C81 00000039           1590      cmpi.l #$39,d1 * we check if digit
+0000226E  6F00 004E               1591      ble readHexLoopD
+00002272  0C81 00000041           1592      cmpi.l #$41,d1 * check with A
+00002278  6D00 000C               1593      blt readHexLoopCheck
+0000227C  0C81 00000046           1594      cmpi.l #$46,d1 ; check with F
+00002282  6F00 0028               1595      ble readHexLoopU
+00002286                          1596  readHexLoopCheck
+00002286  0C81 00000061           1597      cmpi.l #$61,d1 * check with a
+0000228C  6D00 003E               1598      blt readHexDone
+00002290  0C81 00000066           1599      cmpi.l #$66,d1 ; check with f
+00002296  6E00 0034               1600      bgt readHexDone
+0000229A                          1601      * here letter lower case
+0000229A  0481 00000061           1602      subi.l #$61,d1
+000022A0  0681 0000000A           1603      addi.l #10,d1 ; convert to value 
+000022A6  4EF9 000022C4           1604      jmp readHexLoopUpdate
+000022AC                          1605  readHexLoopU
+000022AC                          1606      * here letter upper case
+000022AC  0481 00000041           1607      subi.l #$41,d1
+000022B2  0681 0000000A           1608      addi.l #10,d1 ; convert to value 
+000022B8  4EF9 000022C4           1609      jmp readHexLoopUpdate
+000022BE                          1610  readHexLoopD
+000022BE  0481 00000030           1611      subi.l #$30,d1
+000022C4                          1612  readHexLoopUpdate
+000022C4  E98A                    1613      lsl.l #4,d2 ; update result!
+000022C6  D481                    1614      add.l d1,d2 * add current digit 
+000022C8  4EF8 2258               1615      jmp readHexLoop
+000022CC                          1616  readHexDone
+000022CC  2002                    1617      move.l d2,d0 
+000022CE  4CDF 0006               1618      movem.l (sp)+,d1-d2
+000022D2  4E75                    1619      rts  
+000022D2  4E75                    1620  -------------------- end include --------------------
+000022D4                          1621      INCLUDE 'string_subroutine.x68'
+000022D4                          1622      * Appends a copy of the source string to the destination string. The terminating null character in destination is overwritten by the first character of source
+000022D4                          1623      ; a0  = destination
+000022D4                          1624      ; a1 = source
+000022D4                          1625      ; return none
+000022D4                          1626      
+000022D4                          1627  strcat
+000022D4  2F00                    1628      move.l d0,-(sp)
+000022D6  48E7 00C0               1629      movem.l a0-a1,-(sp)
+000022DA                          1630      ; first loop we need to get the address of first null char
+000022DA                          1631  strcatLoop1
+000022DA  1010                    1632      move.b (a0),d0
+000022DC  6700 0008               1633      beq strcatLoop2
+000022E0  5288                    1634      adda.l #1,a0 ; go to check next char
+000022E2  4EF8 22DA               1635      jmp strcatLoop1
+000022E6                          1636  strcatLoop2
+000022E6  1019                    1637      move.b (a1)+,d0
+000022E8  6700 0008               1638      beq strcatDone
+000022EC  10C0                    1639      move.b d0,(a0)+ 
+000022EE  4EF8 22E6               1640      jmp strcatLoop2
+000022F2                          1641  strcatDone
+000022F2  1080                    1642      move.b d0,(a0) ; add null char at end
+000022F4  4CDF 0300               1643      movem.l (sp)+,a0-a1
+000022F8  201F                    1644      move.l (sp)+,d0
+000022FA  4E75                    1645      rts
+000022FC                          1646      
+000022FC                          1647      ; convert value to hex 
+000022FC                          1648      ; d0 value that we need to convert 
+000022FC                          1649      ; a1 address of the buffer that will recieve string that converted 
+000022FC                          1650      ; d1 = 0 no zero padding 1 with zero padding
+000022FC                          1651      ; d2 = number of digit that we need to convert 
+000022FC                          1652      ; return value none
+000022FC                          1653  Hex2Str
+000022FC  48E7 F800               1654      movem.l d0-d4,-(sp)
+00002300  2F09                    1655      move.l a1,-(sp)
+00002302  4284                    1656      clr.l d4 ; we use it as counter 
+00002304                          1657  Hex2StrLoop
+00002304  2600                    1658      move.l d0,d3
+00002306  E888                    1659      lsr.l #4,d0 ; update d0
+00002308  0283 0000000F           1660      andi.l #$f,d3
+0000230E  B63C 000A               1661      cmp.b #10,d3
+00002312  6D00 000E               1662      blt Hex2StrLoopD
+00002316                          1663      ; here letter
+00002316  0683 00000037           1664      addi.l #$37,d3 ; 41-0a = 37
+0000231C  4EF9 00002328           1665      jmp Hex2StrLoopS
+00002322                          1666  Hex2StrLoopD ; here digit
+00002322  0683 00000030           1667      addi.l #$30,d3 ; convert to digit
+00002328                          1668  Hex2StrLoopS ; we save it here 
+00002328  1F03                    1669      move.b d3,-(sp) ; push to stack
+0000232A  5244                    1670      addi #1,d4
+0000232C  B0BC 00000000           1671      cmp.l #0,d0
+00002332  6600 000C               1672      bne Hex2StrLoopU ; if there other no 0 digits we need to store them
+00002336  B2BC 00000001           1673      cmp.l #1,d1
+0000233C  6600 0006               1674      bne Hex2StrLoop2
+00002340                          1675  Hex2StrLoopU ; update loop
+00002340  5342                    1676      subi #1,d2
+00002342  66C0                    1677      bne Hex2StrLoop
+00002344                          1678  Hex2StrLoop2
+00002344                          1679      ; pop from stack
+00002344  161F                    1680      move.b (sp)+,d3
+00002346  12C3                    1681      move.b d3,(a1)+ ; save it
+00002348  5344                    1682      subi #1,d4
+0000234A  66F8                    1683      bne Hex2StrLoop2
+0000234C                          1684      ; store null at end
+0000234C  4203                    1685      clr.b d3
+0000234E  1283                    1686      move.b d3,(a1)
+00002350  225F                    1687      move.l (sp)+,a1
+00002352  4CDF 001F               1688      movem.l (sp)+,d0-d4
+00002356  4E75                    1689      rts
+00002358                          1690  
+00002358                          1691      * calculate length of string 
+00002358                          1692      * a0 the string that we need to calculate it's length
+00002358                          1693      ; return 
+00002358                          1694      * d0 length of string
+00002358                          1695  
+00002358                          1696  strlen
+00002358  2F08                    1697      move.l a0,-(sp)
+0000235A  4280                    1698      clr.l d0 ; d0 = 0
+0000235C                          1699  strlenLoop
+0000235C  0C18 0000               1700      cmp.b #0,(a0)+
+00002360  6700 0008               1701      beq strlenDone 
+00002364  5280                    1702      addi.l #1,d0 ; d0++
+00002366  4EF8 235C               1703      jmp strlenLoop
+0000236A                          1704  strlenDone
+0000236A  205F                    1705      move.l (sp)+,a0
+0000236C  4E75                    1706      rts
+0000236C  4E75                    1707  -------------------- end include --------------------
+0000236E                          1708      
+0000236E                          1709      INCLUDE 'variables.x68'
+0000236E  =00000064               1710  max_size_str equ 100
+0000236E                          1711  start_location ds.l 1
+00002372                          1712  end_location ds.l 1
+00002376= 00 00                   1713  digit dc.b 0,0 
+00002378= 00 00 00 00 00 00 ...   1714  instruction_str dcb.b max_size_str,0 ; inialize with 0
+000023DC= 00 00 00 00 00 00 ...   1715  data_str dcb.b max_size_str,0 ; inialize with 0
+000023DC= 00 00 00 00 00 00 ...   1716  -------------------- end include --------------------
+00002440                          1717      INCLUDE 'strings.x68'
+00002440                          1718  ; OpCodes
+00002440= 41 44 44 00             1719  opcode_ADD dc.b 'ADD',0
+00002444= 41 44 44 49 00          1720  opcode_ADDI dc.b 'ADDI',0
+00002449= 41 44 44 51 00          1721  opcode_ADDQ dc.b 'ADDQ',0
+0000244E= 53 55 42 00             1722  opcode_SUB dc.b 'SUB',0
+00002452= 53 55 42 49 00          1723  opcode_SUBI dc.b 'SUBI',0
+00002457= 41 4E 44 00             1724  opcode_AND dc.b 'AND',0
+0000245B= 41 4E 44 49 00          1725  opcode_ANDI dc.b 'ANDI',0
+00002460= 4F 52 00                1726  opcode_OR dc.b 'OR',0
+00002463= 4F 52 49 00             1727  opcode_ORI dc.b 'ORI',0
+00002467= 4E 4F 50 00             1728  opcode_NOP dc.b 'NOP',0
+0000246B= 52 54 53 00             1729  opcode_RTS dc.b 'RTS',0
+0000246F= 4C 45 41 20 00          1730  opcode_LEA dc.b 'LEA ',0
+00002474= 47 54 20 00             1731  opcode_GT dc.b 'GT ',0
+00002478= 4C 45 20 00             1732  opcode_LE dc.b 'LE ',0
+0000247C= 45 51 20 00             1733  opcode_EQ dc.b 'EQ ',0
+00002480= 52 41 20 00             1734  opcode_RA dc.b 'RA ',0
+00002484= 4A 53 52 20 00          1735  opcode_JSR dc.b 'JSR ',0
+00002489= 4E 4F 54 00             1736  opcode_NOT dc.b 'NOT',0
+0000248D= 4D 4F 56 45 00          1737  opcode_MOVE dc.b 'MOVE',0
+00002492= 4D 4F 56 45 51 20 00    1738  opcode_MOVEQ dc.b 'MOVEQ ',0
+00002499= 4D 4F 56 45 4D 00       1739  opcode_MOVEM dc.b 'MOVEM',0
+0000249F= 52 4F 00                1740  opcode_RO dc.b 'RO',0
+000024A2= 44 41 54 41 00          1741  data dc.b 'DATA',0
+000024A7= 42 00                   1742  bChar dc.b 'B',0
+000024A9= 57 00                   1743  wChar dc.b 'W',0
+000024AB= 4C 00                   1744  lChar dc.b 'L',0
+000024AD= 20 00                   1745  Space dc.b ' ',0
+000024AF= 44 00                   1746  dChar dc.b 'D',0
+000024B1= 41 00                   1747  aChar dc.b 'A',0
+000024B3= 53 00                   1748  sChar dc.b 'S',0
+000024B5= 52 00                   1749  rChar dc.b 'R',0
+000024B7= 51 00                   1750  qChar dc.b 'Q',0
+000024B9= 4D 00                   1751  mChar dc.b 'M',0
+000024BB= 24 00                   1752  sDolar dc.b '$',0
+000024BD= 2C 00                   1753  comma dc.b ',',0
+000024BF= 2E 00                   1754  dot dc.b '.',0
+000024C1= 23 00                   1755  octothorpe dc.b '#',0
+000024C3= 23 24 00                1756  octothorpe1 dc.b '#$',0
+000024C6= 2B 00                   1757  plus dc.b '+',0
+000024C8= 2D 00                   1758  minus dc.b '-',0
+000024CA= 2F 00                   1759  slash dc.b '/',0
+000024CC= 20 20 20 20 20 00       1760  separate dc.b '     ',0
+000024D2= 28 00                   1761  BracketOpen dc.b '(',0
+000024D4= 29 00                   1762  BracketClose dc.b ')',0
+000024D6= 29 2B 00                1763  BracketClose1 dc.b ')+',0
+000024D9= 28 41 00                1764  BracketOpen1 dc.b '(A',0
+000024DC= 2D 28 41 00             1765  BracketOpen2 dc.b '-(A',0
+000024E0                          1766  ; string for user
+000024E0= 45 6E 74 65 72 20 ...   1767  welcomeMsg dc.b 'Enter starting address < ending address (no 0s leading ex.9000): ',0
+00002522= 45 6E 74 65 72 20 ...   1768  enter_start_msg dc.b 'Enter starting loction (only hex characters and no 0s leading ex.9000): ',0
+0000256B= 45 6E 74 65 72 20 ...   1769  enter_end_msg dc.b 'Enter ending loction (only hex characters and no 0s leading ex.9000): ',0
+000025B2= 53 74 61 72 74 20 ...   1770  error_msg1 dc.b 'Start location must be less than end location: ',0
+000025E2= 50 72 65 73 73 20 ...   1771  next10instruction_msg dc.b 'Press Enter for more (other keys to exit): ',0
+0000260E= 0D 0A 50 72 65 73 ...   1772  restart_msg dc.b 13,10,'Press y to restart (other keys to exit): ',0
+0000263A= 53 74 61 72 74 20 ...   1773  start_odd_msg dc.b 'Start location address is odd, it must be even please try again: ',0
+0000267C= 45 6E 64 20 6C 6F ...   1774  end_odd_msg dc.b 'End location address is odd, it must be even please try again: ',0
+000026BC= 0D 0A 00                1775  new_line  dc.b 13,10,0
+000026BC= 0D 0A 00                1776  -------------------- end include --------------------
+000026BF                          1777  
+000026BF                          1778      INCLUDE 'demo_test_hard.x68'
+000026BF                          1779  
+000026BF  =00009000               1780  start       EQU $00009000   * ORG and END address
+000026BF  =00000003               1781  CODE3 equ 3
+00000000                          1782      SECTION CODE3
+00000000                          1783  
+00009000                          1784          ORG start
+00009000                          1785  
+00009000                          1786  NOP
+00009000  4E75                    1787      RTS
+00009002  4E71                    1788      NOP
+00009004  4E75                    1789      RTS
+00009006  41D0                    1790      LEA     (A0),A0
+00009008  41D5                    1791      LEA     (A5),A0
+0000900A  41D7                    1792      LEA     (A7),A0
+0000900C  4FD0                    1793      LEA     (A0),A7
+0000900E  4FD5                    1794      LEA     (A5),A7
+00009010  4FD7                    1795      LEA     (A7),A7
+00009012  1200                    1796      MOVE.B    D0,D1
+00009014  1080                    1797      MOVE.B    D0,(A0)
+00009016  10C0                    1798      MOVE.B    D0,(A0)+
+00009018  1100                    1799      MOVE.B    D0,-(A0)
+0000901A  1010                    1800      MOVE.B    (A0),D0
+0000901C  1290                    1801      MOVE.B    (A0),(A1)
+0000901E  12D0                    1802      MOVE.B    (A0),(A1)+
+00009020  1310                    1803      MOVE.B    (A0),-(A1)
+00009022  1018                    1804      MOVE.B    (A0)+,D0
+00009024  1298                    1805      MOVE.B    (A0)+,(A1)
+00009026  12D8                    1806      MOVE.B    (A0)+,(A1)+
+00009028  1318                    1807      MOVE.B    (A0)+,-(A1)
+0000902A  1020                    1808      MOVE.B    -(A0),D0
+0000902C  12A0                    1809      MOVE.B    -(A0),(A1)
+0000902E  12E0                    1810      MOVE.B    -(A0),(A1)+
+00009030  1320                    1811      MOVE.B    -(A0),-(A1)
+00009032  3200                    1812      MOVE.W    D0,D1
+00009034  3080                    1813      MOVE.W    D0,(A0)
+00009036  30C0                    1814      MOVE.W    D0,(A0)+
+00009038  3100                    1815      MOVE.W    D0,-(A0)
+0000903A  3008                    1816      MOVE.W    A0,D0
+0000903C  3288                    1817      MOVE.W    A0,(A1)
+0000903E  32C8                    1818      MOVE.W    A0,(A1)+
+00009040  3308                    1819      MOVE.W    A0,-(A1)
+00009042  3010                    1820      MOVE.W    (A0),D0
+00009044  3290                    1821      MOVE.W    (A0),(A1)
+00009046  32D0                    1822      MOVE.W    (A0),(A1)+
+00009048  3310                    1823      MOVE.W    (A0),-(A1)
+0000904A  3018                    1824      MOVE.W    (A0)+,D0
+0000904C  3298                    1825      MOVE.W    (A0)+,(A1)
+0000904E  32D8                    1826      MOVE.W    (A0)+,(A1)+
+00009050  3318                    1827      MOVE.W    (A0)+,-(A1)
+00009052  3020                    1828      MOVE.W    -(A0),D0
+00009054  32A0                    1829      MOVE.W    -(A0),(A1)
+00009056  32E0                    1830      MOVE.W    -(A0),(A1)+
+00009058  3320                    1831      MOVE.W    -(A0),-(A1)
+0000905A  2200                    1832      MOVE.L    D0,D1
+0000905C  2080                    1833      MOVE.L    D0,(A0)
+0000905E  20C0                    1834      MOVE.L    D0,(A0)+
+00009060  2100                    1835      MOVE.L    D0,-(A0)
+00009062  2008                    1836      MOVE.L    A0,D0
+00009064  2288                    1837      MOVE.L    A0,(A1)
+00009066  22C8                    1838      MOVE.L    A0,(A1)+
+00009068  2308                    1839      MOVE.L    A0,-(A1)
+0000906A  2010                    1840      MOVE.L    (A0),D0
+0000906C  2290                    1841      MOVE.L    (A0),(A1)
+0000906E  22D0                    1842      MOVE.L    (A0),(A1)+
+00009070  2310                    1843      MOVE.L    (A0),-(A1)
+00009072  2018                    1844      MOVE.L    (A0)+,D0
+00009074  2298                    1845      MOVE.L    (A0)+,(A1)
+00009076  22D8                    1846      MOVE.L    (A0)+,(A1)+
+00009078  2318                    1847      MOVE.L    (A0)+,-(A1)
+0000907A  2020                    1848      MOVE.L    -(A0),D0
+0000907C  22A0                    1849      MOVE.L    -(A0),(A1)
+0000907E  22E0                    1850      MOVE.L    -(A0),(A1)+
+00009080  2320                    1851      MOVE.L    -(A0),-(A1)
+00009082  48A1 007F               1852      MOVEM.W   A1-A7,-(A1)
+00009086  48E1 7F00               1853      MOVEM.L   D1-D7,-(A1)
+0000908A  48A1 0140               1854      MOVEM.W   A1/D7,-(A1)
+0000908E  48E1 0140               1855      MOVEM.L   A1/D7,-(A1)
+00009092  4891 FE00               1856      MOVEM.W   A1-A7,(A1)
+00009096  48D1 00FE               1857      MOVEM.L   D1-D7,(A1)
+0000909A  4891 0280               1858      MOVEM.W   A1/D7,(A1)
+0000909E  48D1 0280               1859      MOVEM.L   A1/D7,(A1)
+000090A2  4C99 FE00               1860      MOVEM.W   (A1)+,A1-A7
+000090A6  4CD9 00FE               1861      MOVEM.L   (A1)+,D1-D7
+000090AA  4C99 0280               1862      MOVEM.W   (A1)+,A1/D7
+000090AE  4CD9 0280               1863      MOVEM.L   (A1)+,A1/D7
+000090B2  4C91 FE00               1864      MOVEM.W   (A1),A1-A7
+000090B6  4CD1 00FE               1865      MOVEM.L   (A1),D1-D7
+000090BA  4C91 0280               1866      MOVEM.W   (A1),A1/D7
+000090BE  4CD1 0280               1867      MOVEM.L   (A1),A1/D7
+000090C2  3040                    1868      MOVEA.W    D0,A0
+000090C4  3048                    1869      MOVEA.W    A0,A0
+000090C6  3050                    1870      MOVEA.W    (A0),A0
+000090C8  3058                    1871      MOVEA.W    (A0)+,A0
+000090CA  3060                    1872      MOVEA.W    -(A0),A0
+000090CC  2040                    1873      MOVEA.L    D0,A0
+000090CE  2048                    1874      MOVEA.L    A0,A0
+000090D0  2050                    1875      MOVEA.L    (A0),A0
+000090D2  2058                    1876      MOVEA.L    (A0)+,A0
+000090D4  2060                    1877      MOVEA.L    -(A0),A0  
+000090D6  D401                    1878      ADD.B     D1,D2
+000090D8  D311                    1879      ADD.B     D1,(A1)
+000090DA  D319                    1880      ADD.B     D1,(A1)+
+000090DC  D321                    1881      ADD.B     D1,-(A1)
+000090DE  D211                    1882      ADD.B     (A1),D1
+000090E0  D219                    1883      ADD.B     (A1)+,D1
+000090E2  D221                    1884      ADD.B     -(A1),D1
+000090E4  D441                    1885      ADD.W     D1,D2
+000090E6  D351                    1886      ADD.W     D1,(A1)
+000090E8  D359                    1887      ADD.W     D1,(A1)+
+000090EA  D361                    1888      ADD.W     D1,-(A1)
+000090EC  D251                    1889      ADD.W     (A1),D1
+000090EE  D259                    1890      ADD.W     (A1)+,D1
+000090F0  D261                    1891      ADD.W     -(A1),D1
+000090F2  D481                    1892      ADD.L     D1,D2
+000090F4  D391                    1893      ADD.L     D1,(A1)
+000090F6  D399                    1894      ADD.L     D1,(A1)+
+000090F8  D3A1                    1895      ADD.L     D1,-(A1)
+000090FA  D291                    1896      ADD.L     (A1),D1
+000090FC  D299                    1897      ADD.L     (A1)+,D1
+000090FE  D2A1                    1898      ADD.L     -(A1),D1
+00009100  D4C1                    1899      ADDA.W        D1,A2
+00009102  D4D1                    1900      ADDA.W        (A1),A2
+00009104  D4D9                    1901      ADDA.W        (A1)+,A2
+00009106  D4E1                    1902      ADDA.W        -(A1),A2
+00009108  D5C1                    1903      ADDA.L        D1,A2
+0000910A  D5D1                    1904      ADDA.L        (A1),A2
+0000910C  D5D9                    1905      ADDA.L        (A1)+,A2
+0000910E  D5E1                    1906      ADDA.L        -(A1),A2
+00009110  9401                    1907      SUB.B     D1,D2
+00009112  9311                    1908      SUB.B     D1,(A1)
+00009114  9319                    1909      SUB.B     D1,(A1)+
+00009116  9321                    1910      SUB.B     D1,-(A1)
+00009118  9211                    1911      SUB.B     (A1),D1
+0000911A  9219                    1912      SUB.B     (A1)+,D1
+0000911C  9221                    1913      SUB.B     -(A1),D1
+0000911E  9441                    1914      SUB.W     D1,D2
+00009120  92C1                    1915      SUB.W     D1,A1
+00009122  9351                    1916      SUB.W     D1,(A1)
+00009124  9359                    1917      SUB.W     D1,(A1)+
+00009126  9361                    1918      SUB.W     D1,-(A1)
+00009128  9249                    1919      SUB.W     A1,D1
+0000912A  9251                    1920      SUB.W     (A1),D1
+0000912C  9259                    1921      SUB.W     (A1)+,D1
+0000912E  9261                    1922      SUB.W     -(A1),D1
+00009130  9481                    1923      SUB.L     D1,D2
+00009132  93C1                    1924      SUB.L     D1,A1
+00009134  9391                    1925      SUB.L     D1,(A1)
+00009136  9399                    1926      SUB.L     D1,(A1)+
+00009138  93A1                    1927      SUB.L     D1,-(A1)
+0000913A  9289                    1928      SUB.L     A1,D1
+0000913C  9291                    1929      SUB.L     (A1),D1
+0000913E  9299                    1930      SUB.L     (A1)+,D1
+00009140  92A1                    1931      SUB.L     -(A1),D1    
+00009142  C3C0                    1932      MULS.W    D0,D1
+00009144  C3D0                    1933      MULS.W    (A0),D1
+00009146  C3E0                    1934      MULS.W    -(A0),D1
+00009148  C3D8                    1935      MULS.W    (A0)+,D1
+0000914A  82C0                    1936      DIVU.W    D0,D1
+0000914C  82D0                    1937      DIVU.W    (A0),D1
+0000914E  82E0                    1938      DIVU.W    -(A0),D1
+00009150  82D8                    1939      DIVU.W    (A0)+,D1
+00009152  C401                    1940      AND.B     D1,D2
+00009154  C311                    1941      AND.B     D1,(A1)
+00009156  C319                    1942      AND.B     D1,(A1)+
+00009158  C321                    1943      AND.B     D1,-(A1)
+0000915A  C211                    1944      AND.B     (A1),D1
+0000915C  C219                    1945      AND.B     (A1)+,D1
+0000915E  C221                    1946      AND.B     -(A1),D1
+00009160  C441                    1947      AND.W     D1,D2
+00009162  C351                    1948      AND.W     D1,(A1)
+00009164  C359                    1949      AND.W     D1,(A1)+
+00009166  C361                    1950      AND.W     D1,-(A1)
+00009168  C251                    1951      AND.W     (A1),D1
+0000916A  C259                    1952      AND.W     (A1)+,D1
+0000916C  C261                    1953      AND.W     -(A1),D1
+0000916E  C481                    1954      AND.L     D1,D2
+00009170  C391                    1955      AND.L     D1,(A1)
+00009172  C399                    1956      AND.L     D1,(A1)+
+00009174  C3A1                    1957      AND.L     D1,-(A1)
+00009176  C291                    1958      AND.L     (A1),D1
+00009178  C299                    1959      AND.L     (A1)+,D1
+0000917A  C2A1                    1960      AND.L     -(A1),D1
+0000917C  8401                    1961      OR.B     D1,D2
+0000917E  8311                    1962      OR.B     D1,(A1)
+00009180  8319                    1963      OR.B     D1,(A1)+
+00009182  8321                    1964      OR.B     D1,-(A1)
+00009184  8211                    1965      OR.B     (A1),D1
+00009186  8219                    1966      OR.B     (A1)+,D1
+00009188  8221                    1967      OR.B     -(A1),D1
+0000918A  8441                    1968      OR.W     D1,D2
+0000918C  8351                    1969      OR.W     D1,(A1)
+0000918E  8359                    1970      OR.W     D1,(A1)+
+00009190  8361                    1971      OR.W     D1,-(A1)
+00009192  8251                    1972      OR.W     (A1),D1
+00009194  8259                    1973      OR.W     (A1)+,D1
+00009196  8261                    1974      OR.W     -(A1),D1
+00009198  8481                    1975      OR.L     D1,D2
+0000919A  8391                    1976      OR.L     D1,(A1)
+0000919C  8399                    1977      OR.L     D1,(A1)+
+0000919E  83A1                    1978      OR.L     D1,-(A1)
+000091A0  8291                    1979      OR.L     (A1),D1
+000091A2  8299                    1980      OR.L     (A1)+,D1
+000091A4  82A1                    1981      OR.L     -(A1),D1
+000091A6  E32A                    1982      LSL.B     D1,D2
+000091A8  E36A                    1983      LSL.W     D1,D2
+000091AA  E3D1                    1984      LSL.W     (A1)
+000091AC  E3D9                    1985      LSL.W     (A1)+
+000091AE  E3E1                    1986      LSL.W     -(A1)
+000091B0  E3AA                    1987      LSL.L     D1,D2
+000091B2  E22A                    1988      LSR.B     D1,D2
+000091B4  E26A                    1989      LSR.W     D1,D2
+000091B6  E2D1                    1990      LSR.W     (A1)
+000091B8  E2D9                    1991      LSR.W     (A1)+
+000091BA  E2E1                    1992      LSR.W     -(A1)
+000091BC  E2AA                    1993      LSR.L     D1,D2    
+000091BE  E222                    1994      ASR.B     D1,D2
+000091C0  E262                    1995      ASR.W     D1,D2
+000091C2  E0D1                    1996      ASR.W     (A1)
+000091C4  E0D9                    1997      ASR.W     (A1)+
+000091C6  E0E1                    1998      ASR.W     -(A1)
+000091C8  E2A2                    1999      ASR.L     D1,D2
+000091CA  E322                    2000      ASL.B     D1,D2
+000091CC  E362                    2001      ASL.W     D1,D2
+000091CE  E1D1                    2002      ASL.W     (A1)
+000091D0  E1D9                    2003      ASL.W     (A1)+
+000091D2  E1E1                    2004      ASL.W     -(A1)
+000091D4  E3A2                    2005      ASL.L     D1,D2  
+000091D6  6E30                    2006      BGT.B     label1
+000091D8  6E40                    2007      BGT.B     label2
+000091DA  6F2C                    2008      BLE.B     label1
+000091DC  6F3C                    2009      BLE.B     label2
+000091DE  6C28                    2010      BGE.B     label1
+000091E0  6738                    2011      BEQ.B     label2
+000091E2  6700 0024               2012      BEQ.W     label1
+000091E6  4E90                    2013      JSR       (A0)
+000091E8  4EB8 1234               2014      JSR       $1234
+000091EC  4EB9 12345678           2015      JSR       $12345678
+000091F2  4EB9 00009208           2016      JSR       label1
+000091F8  4EB9 0000921A           2017      JSR       label2
+000091FE  4EB9 00009220           2018      JSR       label3
+00009204  4E71                    2019      NOP
+00009206  4E75                    2020      RTS
+00009208                          2021  label1
+00009208  4E71                    2022      NOP
+0000920A  4E75                    2023      RTS
+0000920C  41F8 0012               2024      LEA       $12,A0
+00009210  41F8 1234               2025      LEA       $1234,A0
+00009214  41F9 12345678           2026      LEA       $12345678,A0
+0000921A                          2027  label2
+0000921A  7000                    2028      MOVEQ     #$0,D0
+0000921C  7012                    2029      MOVEQ     #$12,D0
+0000921E  70FF                    2030      MOVEQ     #$FF,D0
+00009220                          2031  label3
+00009220  48B8 FE00 0012          2032      MOVEM.W   A1-A7,$12
+00009226  48F8 00FE 0012          2033      MOVEM.L   D1-D7,$12
+0000922C  48B8 0280 0012          2034      MOVEM.W   A1/D7,$12
+00009232  48F8 0280 0012          2035      MOVEM.L   A1/D7,$12
+00009238  48B8 FE00 1234          2036      MOVEM.W   A1-A7,$1234
+0000923E  48F8 00FE 1234          2037      MOVEM.L   D1-D7,$1234
+00009244  48B8 0280 1234          2038      MOVEM.W   A1/D7,$1234
+0000924A  48F8 0280 1234          2039      MOVEM.L   A1/D7,$1234
+00009250  48B9 FE00 12345678      2040      MOVEM.W   A1-A7,$12345678
+00009258  48F9 00FE 12345678      2041      MOVEM.L   D1-D7,$12345678
+00009260  48B9 0280 12345678      2042      MOVEM.W   A1/D7,$12345678
+00009268  48F9 0280 12345678      2043      MOVEM.L   A1/D7,$12345678
+00009270  4CB8 FE00 0012          2044      MOVEM.W   $12,A1-A7
+00009276  4CF8 00FE 0012          2045      MOVEM.L   $12,D1-D7
+0000927C  4CB8 0280 0012          2046      MOVEM.W   $12,A1/D7
+00009282  4CF8 0280 0012          2047      MOVEM.L   $12,A1/D7
+00009288  4CB8 FE00 1234          2048      MOVEM.W   $1234,A1-A7
+0000928E  4CF8 00FE 1234          2049      MOVEM.L   $1234,D1-D7
+00009294  4CB8 0280 1234          2050      MOVEM.W   $1234,A1/D7
+0000929A  4CF8 0280 1234          2051      MOVEM.L   $1234,A1/D7
+000092A0  4CB9 FE00 12345678      2052      MOVEM.W   $12345678,A1-A7
+000092A8  4CF9 00FE 12345678      2053      MOVEM.L   $12345678,D1-D7
+000092B0  4CB9 0280 12345678      2054      MOVEM.W   $12345678,A1/D7
+000092B8  4CF9 0280 12345678      2055      MOVEM.L   $12345678,A1/D7
+000092C0  D4F8 0012               2056      ADDA.W    $12,A2
+000092C4  D4F8 1234               2057      ADDA.W    $1234,A2
+000092C8  D4F9 12345678           2058      ADDA.W    $12345678,A2
+000092CE  D4FC 1234               2059      ADDA.W    #$1234,A2
+000092D2  D5F8 0012               2060      ADDA.L    $12,A2
+000092D6  D5F8 1234               2061      ADDA.L    $1234,A2
+000092DA  D5F9 12345678           2062      ADDA.L    $12345678,A2
+000092E0  D5FC 12345678           2063      ADDA.L    #$12345678,A2
+000092E6  C3F8 0012               2064      MULS.W    $12,D1
+000092EA  C3F8 1234               2065      MULS.W    $1234,D1
+000092EE  C3F9 12345678           2066      MULS.W    $12345678,D1
+000092F4  C3FC 1234               2067      MULS.W    #$1234,D1
+000092F8  82F8 0012               2068      DIVU.W    $12,D1
+000092FC  82F8 1234               2069      DIVU.W    $1234,D1
+00009300  82F9 12345678           2070      DIVU.W    $12345678,D1
+00009306  82FC 1234               2071      DIVU.W    #$1234,D1
+0000930A  C338 0012               2072      AND.B     D1,$12
+0000930E  C338 1234               2073      AND.B     D1,$1234
+00009312  C339 12345678           2074      AND.B     D1,$12345678
+00009318  C238 0012               2075      AND.B     $12,D1
+0000931C  C238 1234               2076      AND.B     $1234,D1
+00009320  C239 12345678           2077      AND.B     $12345678,D1
+00009326  C23C 0012               2078      AND.B     #$12,D1
+0000932A  C378 0012               2079      AND.W     D1,$12
+0000932E  C378 1234               2080      AND.W     D1,$1234
+00009332  C379 12345678           2081      AND.W     D1,$12345678
+00009338  C278 0012               2082      AND.W     $12,D1
+0000933C  C278 1234               2083      AND.W     $1234,D1
+00009340  C279 12345678           2084      AND.W     $12345678,D1
+00009346  C27C 1234               2085      AND.W     #$1234,D1
+0000934A  C3B8 0012               2086      AND.L     D1,$12
+0000934E  C3B8 1234               2087      AND.L     D1,$1234
+00009352  C3B9 12345678           2088      AND.L     D1,$12345678
+00009358  C2B8 0012               2089      AND.L     $12,D1
+0000935C  C2B8 1234               2090      AND.L     $1234,D1
+00009360  C2B9 12345678           2091      AND.L     $12345678,D1
+00009366  C2BC 12345678           2092      AND.L     #$12345678,D1
+0000936C  E30A                    2093      LSL.B     #$1,D2
+0000936E  E54A                    2094      LSL.W     #$2,D2
+00009370  E78A                    2095      LSL.L     #$3,D2
+00009372  E3F8 0012               2096      LSL.W     $12
+00009376  E3F8 1234               2097      LSL.W     $1234
+0000937A  E3F9 12345678           2098      LSL.W     $12345678
+00009380  E202                    2099      ASR.B     #$1,D2
+00009382  E442                    2100      ASR.W     #$2,D2
+00009384  E682                    2101      ASR.L     #$3,D2
+00009386  E0F8 0012               2102      ASR.W     $12
+0000938A  E0F8 1234               2103      ASR.W     $1234
+0000938E  E0F9 12345678           2104      ASR.W     $12345678
+00009394                          2105  label4
+00009394  6EFE                    2106      BGT.B     label4
+00009396  6EFC                    2107      BGT.B     label4
+00009398  6EFA                    2108      BGT.B     label4
+0000939A  6F00 FE6C               2109      BLE.W     label1
+0000939E  6F00 FE7A               2110      BLE.W     label2
+000093A2  6F00 FE7C               2111      BLE.W     label3
+000093A6  6700 FE60               2112      BEQ.W     label1
+000093AA  6700 FE6E               2113      BEQ.W     label2
+000093AE  6700 FE70               2114      BEQ.W     label3
+000093B2  4EB9 00009208           2115      JSR       label1
+000093B8  4EB9 0000921A           2116      JSR       label2
+000093BE  4EB9 00009220           2117      JSR       label3
+000093BE  4EB9 00009220           2118  -------------------- end include --------------------
+000093C4                          2119      
+000093C4  FFFF FFFF               2120      SIMHALT             ; halt simulator
+000093C8                          2121  
+000093C8                          2122  STOP:
+000093C8                          2123      END    MAIN
+
+No errors detected
+No warnings generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+ACHAR               24B1
+APPENDA             1AD4
+BCHAR               24A7
+BRACKETCLOSE        24D4
+BRACKETCLOSE1       24D6
+BRACKETOPEN         24D2
+BRACKETOPEN1        24D9
+BRACKETOPEN2        24DC
+BRIEFEXTENSIONWORDFORMAT  1F9A
+BRIEFEXTENSIONWORDFORMAT16  1FD0
+BRIEFEXTENSIONWORDFORMAT32  1FE0
+BRIEFEXTENSIONWORDFORMATDONE  200E
+BRIEFEXTENSIONWORDFORMATREGS  30C
+BRIEFEXTENSIONWORDFORMATRETURN0  2014
+BRIEFEXTENSIONWORDFORMATRETURN1  200C
+BRIEFEXTENSIONWORDFORMATU  14CA
+BRIEFEXTENSIONWORDFORMATUPDATE  1FE4
+CODE3               3
+COMMA               24BD
+DATA                24A2
+DATA_STR            23DC
+DCHAR               24AF
+DIGIT               2376
+DISASSEMBLER        111A
+DISASSEMBLER4       14E8
+DISASSEMBLERADD     11B6
+DISASSEMBLERADDI    18C0
+DISASSEMBLERADDQ    11CE
+DISASSEMBLERADDQDATA  121A
+DISASSEMBLERADDQEA  1252
+DISASSEMBLERADDSUB  199C
+DISASSEMBLERADDSUBAN  19BE
+DISASSEMBLERAND     127C
+DISASSEMBLERANDI    18D8
+DISASSEMBLERASLASRLSLLSR  1294
+DISASSEMBLERASLASRLSLLSRA  1312
+DISASSEMBLERASLASRLSLLSRAL  1330
+DISASSEMBLERASLASRLSLLSRI  13F2
+DISASSEMBLERASLASRLSLLSRIR  13BE
+DISASSEMBLERASLASRLSLLSRIRU  13F8
+DISASSEMBLERASLASRLSLLSRL  131E
+DISASSEMBLERASLASRLSLLSRM  12BE
+DISASSEMBLERASLASRLSLLSRR  136C
+DISASSEMBLERASLASRLSLLSRU  12DC
+DISASSEMBLERASLASRLSLLSRUU  137E
+DISASSEMBLERBCC     142C
+DISASSEMBLERBEQ     14B8
+DISASSEMBLERBGT     14A0
+DISASSEMBLERBLE     1488
+DISASSEMBLERBRA     1470
+DISASSEMBLERDATA    19EE
+DISASSEMBLERDONE    1A7A
+DISASSEMBLERERROR   1A88
+DISASSEMBLERG1      189A
+DISASSEMBLERG1U     191A
+DISASSEMBLERG2ANL   1C46
+DISASSEMBLERG2ANU   1C48
+DISASSEMBLERG2ANW   1C3E
+DISASSEMBLERG2FUN   1BCE
+DISASSEMBLERG2FUNDONE  1C5A
+DISASSEMBLERG2FUNREGS  3FC
+DISASSEMBLERG2FUN_DN_EA_DN  1C06
+DISASSEMBLERG2FUN_EA_DN_DN  1BF4
+DISASSEMBLERG3FUN   1C60
+DISASSEMBLERG3FUNAN  1C88
+DISASSEMBLERG3FUNANDONE  1C90
+DISASSEMBLERG3FUNARG3  0
+DISASSEMBLERG3FUNARG4  4
+DISASSEMBLERG3FUNARG5  8
+DISASSEMBLERG3FUNDONE  1D08
+DISASSEMBLERG3FUNDU  1CE8
+DISASSEMBLERG3FUNREGS  33C
+DISASSEMBLERG3FUNRETURN0  1D0E
+DISASSEMBLERG3FUNRETURN1  1D06
+DISASSEMBLERG4CALL  19C4
+DISASSEMBLERG4FUN   1B7E
+DISASSEMBLERG4FUNANL  1BB0
+DISASSEMBLERG4FUNANW  1BA8
+DISASSEMBLERG4FUNDONE  1BC0
+DISASSEMBLERG4FUNREGS  37C
+DISASSEMBLERG4FUNRETURN0  1BC6
+DISASSEMBLERG4FUNSIZE  1BB2
+DISASSEMBLERJSR     16BA
+DISASSEMBLERLEA     1634
+DISASSEMBLERLESS4   1726
+DISASSEMBLERLESS477BW  179C
+DISASSEMBLERLESS477BWL  179E
+DISASSEMBLERLESS4SIZEB  174E
+DISASSEMBLERLESS4SIZEDONE  17B4
+DISASSEMBLERLESS4SIZEU  1750
+DISASSEMBLERLESS4U  17C4
+DISASSEMBLERLESS4_7  17A8
+DISASSEMBLERMOVEM   153A
+DISASSEMBLERMOVEMRM  15D6
+DISASSEMBLERMOVEMRMU  15F4
+DISASSEMBLERMOVEQ   17F2
+DISASSEMBLERNOP     16F6
+DISASSEMBLERNOT     166E
+DISASSEMBLEROR      186A
+DISASSEMBLERORAND   198E
+DISASSEMBLERORI     18F0
+DISASSEMBLERREGS    C7F
+DISASSEMBLERRETURN0  1A80
+DISASSEMBLERROLROR  12FA
+DISASSEMBLERROLRORU  1342
+DISASSEMBLERRTS     170E
+DISASSEMBLERSUB     1882
+DISASSEMBLERSUBI    1908
+DISASSEMBLERUPDATE  1A6E
+DOT                 24BF
+EFFECTIVEADDRESS    1D16
+EFFECTIVEADDRESS7   1E88
+EFFECTIVEADDRESSADAL  1ED6
+EFFECTIVEADDRESSADAS  1EC0
+EFFECTIVEADDRESSADASL  1EA6
+EFFECTIVEADDRESSADASLDONE  1EE2
+EFFECTIVEADDRESSDA  1D88
+EFFECTIVEADDRESSDD  1D66
+EFFECTIVEADDRESSDDA  1DA4
+EFFECTIVEADDRESSDONE  1F8C
+EFFECTIVEADDRESSI   1F12
+EFFECTIVEADDRESSIA  1DC6
+EFFECTIVEADDRESSIAPOS  1DE8
+EFFECTIVEADDRESSIAPRE  1E38
+EFFECTIVEADDRESSIAPREIA  1E54
+EFFECTIVEADDRESSIB  1F4A
+EFFECTIVEADDRESSIBU  1F5C
+EFFECTIVEADDRESSIU  1F62
+EFFECTIVEADDRESSREGS  33C
+EFFECTIVEADDRESSRETURN0  1F92
+EFFECTIVEADDRESSRETURN1  1F8A
+END_LOCATION        2372
+END_ODD_MSG         267C
+ENTER_END_MSG       256B
+ENTER_START_MSG     2522
+ERROR_MSG1          25B2
+HEX2STR             22FC
+HEX2STRLOOP         2304
+HEX2STRLOOP2        2344
+HEX2STRLOOPD        2322
+HEX2STRLOOPS        2328
+HEX2STRLOOPU        2340
+INSTRUCTION_STR     2378
+LABEL1              9208
+LABEL2              921A
+LABEL3              9220
+LABEL4              9394
+LCHAR               24AB
+MAIN                1000
+MAINAGAIN           1012
+MAINCLEAR           110C
+MAINDONE            10F8
+MAINENDAGIN         1046
+MAINENDSAVE         1074
+MAINERROR_1         10FC
+MAININNERLOOP       108E
+MAININNERLOOPDONE   10BC
+MAINLOOP            108C
+MAINLOOP_DONE       10D4
+MAINSTRATSAVE       1040
+MAX_SIZE_STR        64
+MCHAR               24B9
+MINUS               24C8
+NEW_LINE            26BC
+NEXT10INSTRUCTION_MSG  25E2
+NOP                 9000
+OCTOTHORPE          24C1
+OCTOTHORPE1         24C3
+OPCODESIZE          1AF0
+OPCODESIZEB         1B24
+OPCODESIZEDONE      1B66
+OPCODESIZEL         1B54
+OPCODESIZEW         1B3C
+OPCODE_ADD          2440
+OPCODE_ADDI         2444
+OPCODE_ADDQ         2449
+OPCODE_AND          2457
+OPCODE_ANDI         245B
+OPCODE_EQ           247C
+OPCODE_GT           2474
+OPCODE_JSR          2484
+OPCODE_LE           2478
+OPCODE_LEA          246F
+OPCODE_MOVE         248D
+OPCODE_MOVEM        2499
+OPCODE_MOVEQ        2492
+OPCODE_NOP          2467
+OPCODE_NOT          2489
+OPCODE_OR           2460
+OPCODE_ORI          2463
+OPCODE_RA           2480
+OPCODE_RO           249F
+OPCODE_RTS          246B
+OPCODE_SUB          244E
+OPCODE_SUBI         2452
+PLUS                24C6
+QCHAR               24B7
+RCHAR               24B5
+READHEX             2252
+READHEXDONE         22CC
+READHEXLOOP         2258
+READHEXLOOPCHECK    2286
+READHEXLOOPD        22BE
+READHEXLOOPU        22AC
+READHEXLOOPUPDATE   22C4
+REGISTERLIST        20BC
+REGISTERLISTDONE    224C
+REGISTERLISTLOOP    20DC
+REGISTERLISTLOOPA   2126
+REGISTERLISTLOOPDA  2108
+REGISTERLISTLOOPDONE  222E
+REGISTERLISTLOOPMINUS  21E8
+REGISTERLISTLOOPMINUSCHECK  2192
+REGISTERLISTLOOPSLASH  220A
+REGISTERLISTLOOPU   2136
+REGISTERLISTLOOPUPDATE  221C
+REGISTERLISTREG     31F
+RESTART_MSG         260E
+REVERSEBIT16        2092
+REVERSEBIT2         201C
+REVERSEBIT4         203E
+REVERSEBIT8         2068
+SCHAR               24B3
+SDOLAR              24BB
+SEPARATE            24CC
+SLASH               24CA
+SPACE               24AD
+START               9000
+START_LOCATION      236E
+START_ODD_MSG       263A
+STOP                93C8
+STRCAT              22D4
+STRCATDONE          22F2
+STRCATLOOP1         22DA
+STRCATLOOP2         22E6
+STRLEN              2358
+STRLENDONE          236A
+STRLENLOOP          235C
+WCHAR               24A9
+WELCOMEMSG          24E0
+WRITEDATA           1A8E
+WRITEDATAREG        301
+WRITEDATAU          1A9E
